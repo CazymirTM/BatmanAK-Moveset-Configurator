@@ -25,8 +25,8 @@ A modern, high-end desktop utility designed for *Batman: Arkham Knight* casual p
 
 ## 🚀 Installation & Setup
 𝘽𝙚𝙛𝙤𝙧𝙚 𝙮𝙤𝙪 𝙗𝙚𝙜𝙞𝙣 𝙢𝙖𝙠𝙚 𝙨𝙪𝙧𝙚 𝙮𝙤𝙪 𝙝𝙖𝙫𝙚 𝙞𝙣𝙨𝙩𝙖𝙡𝙡𝙚𝙙 𝘽𝙢𝙎𝘿𝙆.
-1. Download the latest setup `.exe` from the [Releases Page](../../releases).
-2. Run BatmanAK Moveset Configurator Installer and install the app anywhere you like.
+1. Download the latest version `.rar` from the [Releases Page](../../releases).
+2. Extract the archive anywhere you want and then open the extracted folder.
 3. Launch `BatmanAK Moveset Configurator.exe`.
 4. Point the tool to your *Batman: Arkham Knight* by pressing the Auto-Locate button.
 5. Enjoy customizing your game!
