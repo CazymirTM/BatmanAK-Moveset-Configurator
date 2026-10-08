@@ -3,7 +3,7 @@
 A modern, high-end desktop utility designed for *Batman: Arkham Knight* casual players that wants more from this game. Easily configure advanced combat movesets, tweak game settings, toggle cheats, enemies tweaks, and manage mod files seamlessly through this tool.
 
 ![GUI of the program](thumbnail.png)
-![ANIMATIONS](1.jpg)
+![ANIMATIONS](1.png)
 ![CHEATS](2.png)
 ![INJECTOR PAGE](3.png)
 
