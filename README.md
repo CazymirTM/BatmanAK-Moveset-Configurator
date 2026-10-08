@@ -2,6 +2,13 @@
 
 A modern, high-end desktop utility designed for *Batman: Arkham Knight* casual players that wants more from this game. Easily configure advanced combat movesets, tweak game settings, toggle cheats, enemies tweaks, and manage mod files seamlessly through this tool.
 
+![GUI of the program](thumbnail.png)
+![ANIMATIONS](1.jpg)
+![CHEATS](2.png)
+![INJECTOR PAGE](3.png)
+
+[![Download Latest Release](https://img.shields.io/badge/Download-Latest_Release-yellow?style=for-the-badge&logo=github)](https://github.com/CazymirTM/BatmanAK-Moveset-Configurator/releases/latest)
+
 ---
 
 ## ✨ Features
