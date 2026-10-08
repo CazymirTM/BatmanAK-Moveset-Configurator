@@ -14,8 +14,10 @@ A modern, high-end desktop utility designed for *Batman: Arkham Knight* casual p
 ## ✨ Features
 * **Categorized Tab Navigation:** Effortlessly switch between dedicated control centers:
   * **ANIMATIONS:** Override batman walk animation, change combat animation set, movement speed multiplier and max combat speed.
+  * **ANIMATIONS+:** Override batman Strike animations, counter animation, auto strike lists, and etc.
   * **CHEATS:** Quickly toggle powerful gameplay modifiers and adjustments.
   * **ENEMIES:** Manage, tweak, and spawn game encounters.
+  * **MOVESETS:** Basically a moveset hub which contains (for now) my own custom movesets that i made and Zaxnnn movesets which he allowed me to place into the tool, this movesets are easy to install with one click.
   * **INJECTOR:** Automatic detection for game folder, BmSDK, and the Moveset Injector, you can easily install the moveset injector through this tab, needed for Console.txt to work correctly.
 * **Automatic Script Deployment:** Automatically installs the necessary `MovesetInjector` files directly into your game directory to ensure debugging and `Console.txt` functionality work right out of the box.
 
