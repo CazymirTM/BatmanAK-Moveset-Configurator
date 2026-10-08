@@ -24,7 +24,7 @@ A modern, high-end desktop utility designed for *Batman: Arkham Knight* casual p
 ---
 
 ## 🚀 Installation & Setup
-
+𝘽𝙚𝙛𝙤𝙧𝙚 𝙮𝙤𝙪 𝙗𝙚𝙜𝙞𝙣 𝙢𝙖𝙠𝙚 𝙨𝙪𝙧𝙚 𝙮𝙤𝙪 𝙝𝙖𝙫𝙚 𝙞𝙣𝙨𝙩𝙖𝙡𝙡𝙚𝙙 𝘽𝙢𝙎𝘿𝙆.
 1. Download the latest setup `.exe` from the [Releases Page](../../releases).
 2. Run BatmanAK Moveset Configurator Installer and install the app anywhere you like.
 3. Launch `BatmanAK Moveset Configurator.exe`.
@@ -38,6 +38,7 @@ A modern, high-end desktop utility designed for *Batman: Arkham Knight* casual p
 * **Operating System:** Windows 10 / 11 (64-bit)
 * **Game:** *Batman: Arkham Knight* (PC / Steam only)
 * **Runtime:** .NET 10.0 Runtime (If the app doesn't open)
+* **BmSDK:** 0.21.0
 
 ---
 
@@ -47,7 +48,3 @@ A modern, high-end desktop utility designed for *Batman: Arkham Knight* casual p
 * Special thanks to creators of BmSDK and community injection tools.
 
 ---
-
-## 📜 License
-
-This project is open-source software provided under the [MIT License](LICENSE). Feel free to contribute, fork, or report issues on GitHub!
