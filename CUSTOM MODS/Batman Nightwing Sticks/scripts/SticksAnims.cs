@@ -1,0 +1,879 @@
+#nullable enable
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
+using BmSDK;
+using BmSDK.BmGame;
+using BmSDK.Engine;
+using BmSDK.Framework;
+
+namespace BatmanNightwingSticks;
+
+internal static class SticksAnims
+{
+    private const string NightwingAnimConfig = "Player_Anim_Config.Nightwing_Anim_Config";
+    private const string NightwingGadgetPoses = "PoseConfig_NwGadgets";
+    private const string StickPoseConfigName = "PoseConfig_BmNightwingSticks";
+    private const string PrioritySet = "Code.NW_Ricochet";
+
+    public static readonly string[] BorrowedSets =
+    {
+        PrioritySet,
+        "Code.NW_Electromagnetic_Blast",
+    };
+
+    private static readonly string[] RetiredSets = { };
+
+    private static IntPtr preparedPawn = IntPtr.Zero;
+    private static readonly HashSet<string> sampledStances = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+    private static Dictionary<string, AnimSet>? loadedAnimIndex;
+    private static string lastSample = "";
+
+    public static void Reset()
+    {
+        preparedPawn = IntPtr.Zero;
+        sticksFirst = null;
+        attached = true;
+        lastInUse = DateTime.UtcNow;
+        sampledStances.Clear();
+        loadedAnimIndex = null;
+        lastSample = "";
+    }
+
+    public static void Install(RPawnPlayer pawn, RInventoryGadget gun)
+    {
+        try
+        {
+            preparedPawn = pawn.Ptr;
+
+            AppendPoseConfigs(pawn);
+            AddSets(pawn, FindSetsByName(BorrowedSets), "install");
+
+            FName pose = PrimedPose(gun);
+            FName camera = GadgetCamera(gun);
+
+            LogPropBones(pawn);
+
+            ModLog.Info("Anims: the sticks' primed pose is '" + pose + "', gadget camera '" + camera + "'.");
+            BorrowForStances(pawn, new[] { pose.ToString() });
+        }
+        catch (Exception exception)
+        {
+            ModLog.Warn("Anims: install failed: " + Util.Unwrap(exception));
+        }
+    }
+
+    public static void Maintain(RPawnPlayer pawn, RInventoryGadget gun)
+    {
+        if (pawn.Ptr != preparedPawn)
+        {
+            Install(pawn, gun);
+
+            return;
+        }
+
+        if (!attached)
+        {
+            return;
+        }
+
+        List<AnimSet> sets = FindSetsByName(BorrowedSets);
+        RWeaponConfig? config = pawn.UnarmedWeaponConfig;
+
+        if (config != null && config.IsValid && sets.Count > 0 && !Util.ContainsSet(config.AnimSets, sets[0]))
+        {
+            AppendPoseConfigs(pawn);
+            AddSets(pawn, sets, "weapon config changed");
+        }
+    }
+
+    private static readonly TimeSpan DetachDelay = TimeSpan.FromSeconds(2.5);
+    private static bool attached = true;
+    private static DateTime lastInUse = DateTime.MinValue;
+
+    private static void Attach(RPawnPlayer pawn)
+    {
+        attached = true;
+        sticksFirst = null;
+        AppendPoseConfigs(pawn);
+        AddSets(pawn, FindSetsByName(BorrowedSets), "sticks in use");
+        SetPriority(pawn, true);
+    }
+
+    private static void Detach(RPawnPlayer pawn)
+    {
+        attached = false;
+        sticksFirst = null;
+
+        List<AnimSet> sets = FindSetsByName(BorrowedSets);
+        SkeletalMeshComponent? mesh = pawn.Mesh;
+
+        if (sets.Count == 0 || mesh == null || !mesh.IsValid)
+        {
+            return;
+        }
+
+        int removed = 0;
+        List<RWeaponConfig> weaponConfigs = PoseWeaponConfigs(pawn);
+
+        foreach (AnimSet set in sets)
+        {
+            removed += RemoveSet(mesh.AnimSets, set);
+
+            foreach (RWeaponConfig weaponConfig in weaponConfigs)
+            {
+                removed += RemoveSet(weaponConfig.AnimSets, set);
+            }
+        }
+
+        Util.TryCall("UpdateAnimations", mesh.UpdateAnimations);
+        ModLog.Info("Anims: sticks put away; Nightwing's gadget anims taken off Batman (" + removed + " list entries), his own animations only.");
+    }
+
+    private static int RemoveSet(TArray<AnimSet> sets, AnimSet set)
+    {
+        int removed = 0;
+
+        for (int index = sets.Count - 1; index >= 0; index--)
+        {
+            AnimSet? existing = sets[index];
+
+            if (existing != null && existing.IsValid && existing.Ptr == set.Ptr)
+            {
+                sets.RemoveAt(index);
+                removed++;
+            }
+        }
+
+        return removed;
+    }
+
+    private static bool? sticksFirst;
+    private static DateTime nextPriorityCheck = DateTime.MinValue;
+
+    public static void Tick(RPawnPlayer pawn)
+    {
+        RInventoryGadget? sticks = Sticks.Gadget;
+
+        if (sticks == null || !sticks.IsValid || pawn.Ptr != preparedPawn)
+        {
+            return;
+        }
+
+        DateTime now = DateTime.UtcNow;
+        bool held = Sticks.HeldBy(out _, out _);
+
+        if (held || SticksFlight.Busy(sticks))
+        {
+            lastInUse = now;
+        }
+
+        bool inUse = now - lastInUse < DetachDelay;
+
+        if (inUse && !attached)
+        {
+            Attach(pawn);
+        }
+        else if (!inUse && attached)
+        {
+            Detach(pawn);
+
+            return;
+        }
+
+        if (!attached)
+        {
+            return;
+        }
+
+        if (sticksFirst != true || now >= nextPriorityCheck)
+        {
+            nextPriorityCheck = now + TimeSpan.FromSeconds(1);
+            SetPriority(pawn, true);
+        }
+
+        if (held)
+        {
+            Sample(pawn, sticks);
+        }
+    }
+
+    public static void Release()
+    {
+        RPawnPlayer? pawn = Sticks.Batman();
+
+        if (pawn != null && pawn.Ptr == preparedPawn)
+        {
+            Util.TryCall("release anims", () => Detach(pawn));
+        }
+    }
+
+    private static void SetPriority(RPawnPlayer pawn, bool first)
+    {
+        List<AnimSet> sets = FindSetsByName(BorrowedSets);
+        SkeletalMeshComponent? mesh = pawn.Mesh;
+
+        if (sets.Count == 0 || mesh == null || !mesh.IsValid)
+        {
+            return;
+        }
+
+        int moved = 0;
+        List<RWeaponConfig> weaponConfigs = PoseWeaponConfigs(pawn);
+
+        moved += MoveAll(mesh.AnimSets, sets);
+
+        foreach (RWeaponConfig weaponConfig in weaponConfigs)
+        {
+            moved += MoveAll(weaponConfig.AnimSets, sets);
+        }
+
+        sticksFirst = first;
+
+        if (moved > 0)
+        {
+            ModLog.Info("Anims: Nightwing's gadget anims moved to the " + (first ? "front" : "back") + " (" + moved + " move(s)).");
+        }
+    }
+
+    private static int MoveAll(TArray<AnimSet> list, List<AnimSet> sets)
+    {
+        List<AnimSet> present = sets.Where(set => Util.ContainsSet(list, set)).ToList();
+        bool inFront = true;
+
+        for (int index = 0; index < present.Count && inFront; index++)
+        {
+            AnimSet? existing = index < list.Count ? list[index] : null;
+
+            inFront = existing != null && existing.IsValid && present.Any(set => set.Ptr == existing.Ptr);
+        }
+
+        if (inFront)
+        {
+            return 0;
+        }
+
+        int moved = 0;
+
+        for (int index = present.Count - 1; index >= 0; index--)
+        {
+            moved += Move(list, present[index], true);
+        }
+
+        return moved;
+    }
+
+    private static int Move(TArray<AnimSet> sets, AnimSet set, bool first)
+    {
+        int index = -1;
+
+        for (int n = 0; n < sets.Count; n++)
+        {
+            AnimSet? existing = sets[n];
+
+            if (existing != null && existing.IsValid && existing.Ptr == set.Ptr)
+            {
+                index = n;
+            }
+        }
+
+        if (index < 0 || (first && index == 0) || (!first && index == sets.Count - 1))
+        {
+            return 0;
+        }
+
+        sets.RemoveAt(index);
+        sets.Insert(first ? 0 : sets.Count, set);
+
+        return 1;
+    }
+
+    public static void Sample(RPawnPlayer pawn, RInventoryGadget gun)
+    {
+        try
+        {
+            List<string> stances = new List<string> { pawn.DesiredPoseForReplication.ToString() };
+            TArray<FName> idleStances = pawn.PoseIdleStances;
+
+            for (int index = 0; index < idleStances.Count; index++)
+            {
+                stances.Add(idleStances[index].ToString());
+            }
+
+            string sample = gun.GadgetState + " | " + string.Join(", ", stances);
+
+            if (sample == lastSample)
+            {
+                return;
+            }
+
+            lastSample = sample;
+
+            List<string> gunStances = stances.Where(IsGunStance).ToList();
+
+            if (gun.GadgetState == RInventoryGadget.GadgetEquipState.GS_AttachetToHand && gunStances.Count > 0)
+            {
+                ModLog.Info("Anims: pose sample " + sample + ".");
+                BorrowForStances(pawn, gunStances);
+            }
+        }
+        catch (Exception exception)
+        {
+            ModLog.Once("sample-failed", "Anims: sampling failed: " + Util.Unwrap(exception));
+        }
+    }
+
+    private static bool IsGunStance(string stance) =>
+        stance.IndexOf("Ricochet", StringComparison.OrdinalIgnoreCase) >= 0 || stance.IndexOf("AreaStun", StringComparison.OrdinalIgnoreCase) >= 0;
+
+    public static FName PrimedPose(RInventoryGadget gun)
+    {
+        FName result = FName.None;
+
+        UCall.Call(gun, "GetPrimedPose", read: frame =>
+        {
+            if (frame.Return is Property ret)
+            {
+                result = BmSDK.Framework.MarshalUtil.ToManaged<FName>(frame.Buffer + ret.Offset);
+            }
+        });
+
+        return result;
+    }
+
+    public static FName GadgetCamera(RInventoryGadget gun)
+    {
+        FName result = FName.None;
+
+        UCall.Call(gun, "GetGadgetCamera", read: frame =>
+        {
+            if (frame.Return is Property ret)
+            {
+                result = BmSDK.Framework.MarshalUtil.ToManaged<FName>(frame.Buffer + ret.Offset);
+            }
+        });
+
+        return result;
+    }
+
+    private static void LogPropBones(RPawnPlayer pawn)
+    {
+        SkeletalMeshComponent? mesh = pawn.Mesh;
+        AnimSet? set = FindSetsByName(new[] { PrioritySet }).FirstOrDefault();
+
+        if (mesh == null || !mesh.IsValid || set == null)
+        {
+            return;
+        }
+
+        TArray<FName> tracks = set.TrackBoneNames;
+        List<string> found = new List<string>();
+
+        for (int index = 0; index < tracks.Count; index++)
+        {
+            string bone = tracks[index].ToString();
+
+            if (System.Text.RegularExpressions.Regex.IsMatch(bone, "gun|dummy|hand|prop|weapon|holster", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+            {
+                found.Add(bone + (mesh.MatchRefBone(tracks[index]) >= 0 ? "" : "(missing)"));
+            }
+        }
+
+        ModLog.Once("propbones", "Anims: NW_Ricochet prop/hand bones: " + string.Join(", ", found) + ".");
+    }
+
+    private static void AppendPoseConfigs(RPawnPlayer pawn)
+    {
+        RPawnPlayerConfig? batman = pawn.AnimationConfig;
+        RPoseConfig? gunPoses = GunPoseConfig();
+
+        if (batman == null || !batman.IsValid || gunPoses == null)
+        {
+            ModLog.Warn("Anims: missing anim config (Batman " + (batman != null) + ", stick poses " + (gunPoses != null) + ").");
+
+            return;
+        }
+
+        List<string> changes = new List<string>();
+
+        PatchPoseList(batman.PoseConfigs, gunPoses, batman.Name.ToString(), changes);
+
+        foreach (RWeaponConfig weaponConfig in PoseWeaponConfigs(pawn))
+        {
+            PatchPoseList(weaponConfig.PoseConfigs, gunPoses, weaponConfig.Name.ToString(), changes);
+        }
+
+        if (changes.Count > 0)
+        {
+            ModLog.Info("Anims: pose configs: " + string.Join(", ", changes) + ".");
+        }
+    }
+
+    private static void PatchPoseList(TArray<RPoseConfig> list, RPoseConfig gunPoses, string owner, List<string> changes)
+    {
+        bool present = false;
+
+        for (int index = list.Count - 1; index >= 0; index--)
+        {
+            RPoseConfig? existing = list[index];
+
+            if (existing == null || !existing.IsValid)
+            {
+                continue;
+            }
+
+            if (existing.Ptr == gunPoses.Ptr)
+            {
+                present = true;
+            }
+            else if (existing.Name.ToString() == NightwingGadgetPoses)
+            {
+                list.RemoveAt(index);
+                changes.Add("removed " + NightwingGadgetPoses + " from " + owner);
+            }
+        }
+
+        if (!present)
+        {
+            list.Insert(list.Count, gunPoses);
+            changes.Add("added " + StickPoseConfigName + " to " + owner);
+        }
+    }
+
+    private static bool IsNightwingObject(GameObject gameObject) => gameObject.GetPathName().IndexOf("Nightwing", StringComparison.OrdinalIgnoreCase) >= 0;
+
+    private static RPoseConfig? gunPoseConfig;
+
+    private static RPoseConfig? GunPoseConfig()
+    {
+        if (gunPoseConfig != null && gunPoseConfig.IsValid)
+        {
+            return gunPoseConfig;
+        }
+
+        RPawnPlayerConfig? nightwing = Game.FindObject<RPawnPlayerConfig>(NightwingAnimConfig);
+        RPoseConfig? source = null;
+
+        if (nightwing != null && nightwing.IsValid)
+        {
+            TArray<RPoseConfig> configs = nightwing.PoseConfigs;
+
+            for (int index = 0; index < configs.Count; index++)
+            {
+                if (configs[index] != null && configs[index].IsValid && configs[index].Name.ToString() == NightwingGadgetPoses)
+                {
+                    source = configs[index];
+                }
+            }
+        }
+
+        if (source == null || source.Outer == null)
+        {
+            return null;
+        }
+
+        RPoseConfig copy = Game.FindObject<RPoseConfig>(source.Outer.Name + "." + StickPoseConfigName) ?? new RPoseConfig(source.Outer, StickPoseConfigName, 0, source);
+
+        int poses = Compact(copy.Poses, pose => IsGunStance(pose.MovementStance.ToString()) || IsGunStance(pose.WeaponStance.ToString()) || IsGunStance(pose.IdleStance.ToString()));
+        int transitions = Compact(copy.Transitions, transition =>
+            IsGunStance(transition.MovementStanceA.ToString()) || IsGunStance(transition.WeaponStanceA.ToString()) || IsGunStance(transition.IdleStanceA.ToString()) ||
+            IsGunStance(transition.MovementStanceB.ToString()) || IsGunStance(transition.WeaponStanceB.ToString()) || IsGunStance(transition.IdleStanceB.ToString()));
+
+        copy.AddToRoot();
+        gunPoseConfig = copy;
+
+        ModLog.Info("Anims: built " + StickPoseConfigName + " from " + NightwingGadgetPoses + ": " + poses + " stick poses, " + transitions + " transitions.");
+
+        return copy;
+    }
+
+    private static unsafe int Compact<T>(TArray<T> array, Func<T, bool> keep)
+    {
+        int count = array.Count;
+        bool[] keeps = new bool[count];
+
+        for (int index = 0; index < count; index++)
+        {
+            keeps[index] = keep(array[index]);
+        }
+
+        byte* data = *(byte**)array.Ptr;
+        int stride = array.Stride;
+        int kept = 0;
+
+        for (int index = 0; index < count; index++)
+        {
+            if (!keeps[index])
+            {
+                continue;
+            }
+
+            if (kept != index)
+            {
+                Buffer.MemoryCopy(data + index * stride, data + kept * stride, stride, stride);
+            }
+
+            kept++;
+        }
+
+        *(int*)((byte*)array.Ptr + IntPtr.Size) = kept;
+
+        return kept;
+    }
+
+    private static List<AnimSet> FindSetsByName(IEnumerable<string> names)
+    {
+        List<AnimSet> found = new List<AnimSet>();
+
+        foreach (AnimSet set in Game.FindObjects<AnimSet>())
+        {
+            if (set != null && set.IsValid && names.Contains(Util.FullName(set)) && set.GetPathName().IndexOf("Nightwing", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                found.Add(set);
+            }
+        }
+
+        return found;
+    }
+
+    public static AnimSequence? FindSequence(string anim)
+    {
+        foreach (AnimSet set in FindSetsByName(BorrowedSets))
+        {
+            AnimSequence? sequence = set.FindAnimSequence(new FName(anim));
+
+            if (sequence != null && sequence.IsValid)
+            {
+                return sequence;
+            }
+        }
+
+        return null;
+    }
+
+    private static float TrackMatchRatio(SkeletalMeshComponent mesh, AnimSet set)
+    {
+        TArray<FName> tracks = set.TrackBoneNames;
+        int matched = 0;
+
+        for (int index = 0; index < tracks.Count; index++)
+        {
+            if (mesh.MatchRefBone(tracks[index]) >= 0)
+            {
+                matched++;
+            }
+        }
+
+        return tracks.Count == 0 ? 0f : matched / (float)tracks.Count;
+    }
+
+    private static List<RWeaponConfig> PoseWeaponConfigs(RPawnPlayer pawn)
+    {
+        List<RWeaponConfig> configs = new List<RWeaponConfig>();
+        HashSet<IntPtr> seen = new HashSet<IntPtr>();
+        Stack<RWeaponConfig?> pending = new Stack<RWeaponConfig?>();
+
+        pending.Push(pawn.UnarmedWeaponConfig);
+        pending.Push(pawn.OverrideUnarmedWeaponConfig);
+
+        while (pending.Count > 0)
+        {
+            RWeaponConfig? config = pending.Pop();
+
+            if (config == null || !config.IsValid || !seen.Add(config.Ptr))
+            {
+                continue;
+            }
+
+            configs.Add(config);
+
+            TArray<RWeaponConfig> extends = config.Extends;
+
+            for (int index = 0; index < extends.Count; index++)
+            {
+                pending.Push(extends[index]);
+            }
+        }
+
+        return configs;
+    }
+
+    private static void AddSets(RPawnPlayer pawn, List<AnimSet> sets, string reason)
+    {
+        SkeletalMeshComponent? mesh = pawn.Mesh;
+        RPawnPlayerConfig? config = pawn.AnimationConfig;
+
+        if (mesh == null || !mesh.IsValid || config == null || !config.IsValid || sets.Count == 0)
+        {
+            return;
+        }
+
+        List<RWeaponConfig> weaponConfigs = PoseWeaponConfigs(pawn);
+        List<string> added = new List<string>();
+
+        RemoveRetiredSets(mesh.AnimSets, added);
+        RemoveRetiredSets(config.GadgetAnimSets, added);
+
+        foreach (RWeaponConfig weaponConfig in weaponConfigs)
+        {
+            RemoveRetiredSets(weaponConfig.AnimSets, added);
+        }
+
+        foreach (AnimSet set in sets)
+        {
+            float ratio = TrackMatchRatio(mesh, set);
+
+            if (ratio < 0.5f)
+            {
+                ModLog.Once("skel:" + Util.FullName(set), "Anims: skipping " + Util.FullName(set) + ", only " + (ratio * 100).ToString("0") + "% of its tracks are on Batman's skeleton.");
+
+                continue;
+            }
+
+            if (!Util.ContainsSet(mesh.AnimSets, set)) mesh.AnimSets.Insert(mesh.AnimSets.Count, set);
+
+            foreach (RWeaponConfig weaponConfig in weaponConfigs)
+            {
+                if (!Util.ContainsSet(weaponConfig.AnimSets, set)) weaponConfig.AnimSets.Insert(weaponConfig.AnimSets.Count, set);
+            }
+
+            set.AddToRoot();
+            added.Add("added " + Util.FullName(set) + " (" + (ratio * 100).ToString("0") + "% tracks)");
+        }
+
+        Util.TryCall("UpdateAnimations", mesh.UpdateAnimations);
+
+        ModLog.Info("Anims (" + reason + "): " + string.Join(", ", added) + " on Batman's mesh and weapon configs (" + string.Join(", ", weaponConfigs.Select(c => c.Name.ToString())) + ").");
+    }
+
+    private static void RemoveRetiredSets(TArray<AnimSet> sets, List<string> log)
+    {
+        for (int index = sets.Count - 1; index >= 0; index--)
+        {
+            AnimSet? set = sets[index];
+
+            if (set != null && set.IsValid && RetiredSets.Contains(Util.FullName(set)) && IsNightwingObject(set))
+            {
+                sets.RemoveAt(index);
+                log.Add("removed " + Util.FullName(set));
+            }
+        }
+    }
+
+    private static bool HasAnimInConfig(RPawnPlayer pawn, string anim)
+    {
+        FName name = new FName(anim);
+
+        foreach (RWeaponConfig weaponConfig in PoseWeaponConfigs(pawn))
+        {
+            TArray<AnimSet> sets = weaponConfig.AnimSets;
+
+            for (int index = 0; index < sets.Count; index++)
+            {
+                AnimSequence? sequence = sets[index] != null && sets[index].IsValid ? sets[index].FindAnimSequence(name) : null;
+
+                if (sequence != null && sequence.IsValid)
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private static AnimSet? FindLoadedSetFor(SkeletalMeshComponent mesh, string anim)
+    {
+        if (loadedAnimIndex == null)
+        {
+            loadedAnimIndex = new Dictionary<string, AnimSet>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (AnimSet set in Game.FindObjects<AnimSet>().OrderBy(set => set.GetPathName().IndexOf("Nightwing", StringComparison.OrdinalIgnoreCase) >= 0 ? 0 : 1))
+            {
+                if (set == null || !set.IsValid || TrackMatchRatio(mesh, set) < 0.5f)
+                {
+                    continue;
+                }
+
+                TArray<AnimSequence> sequences = set.Sequences;
+
+                for (int index = 0; index < sequences.Count; index++)
+                {
+                    AnimSequence? sequence = sequences[index];
+
+                    if (sequence != null && sequence.IsValid)
+                    {
+                        loadedAnimIndex.TryAdd(sequence.SequenceName.ToString(), set);
+                    }
+                }
+            }
+
+            ModLog.Info("Anims: indexed " + loadedAnimIndex.Count + " loaded animations on Batman's skeleton.");
+        }
+
+        return loadedAnimIndex.TryGetValue(anim, out AnimSet? found) && found.IsValid ? found : null;
+    }
+
+    private static void BorrowForStances(RPawnPlayer pawn, IEnumerable<string> stances)
+    {
+        SkeletalMeshComponent? mesh = pawn.Mesh;
+        RPawnPlayerConfig? config = pawn.AnimationConfig;
+
+        if (mesh == null || !mesh.IsValid || config == null || !config.IsValid)
+        {
+            return;
+        }
+
+        List<string> fresh = stances.Where(stance => !Util.IsNone(new FName(stance)) && sampledStances.Add(stance)).ToList();
+
+        if (fresh.Count == 0)
+        {
+            return;
+        }
+
+        bool Wanted(FName a, FName b, FName c) =>
+            fresh.Any(stance => new[] { a, b, c }.Any(name => !Util.IsNone(name) && string.Equals(name.ToString(), stance, StringComparison.OrdinalIgnoreCase)));
+
+        List<string> anims = new List<string>();
+        int entries = 0;
+        TArray<RPoseConfig> poseConfigs = config.PoseConfigs;
+
+        for (int index = 0; index < poseConfigs.Count; index++)
+        {
+            RPoseConfig? poseConfig = poseConfigs[index];
+
+            if (poseConfig == null || !poseConfig.IsValid)
+            {
+                continue;
+            }
+
+            TArray<RPoseConfig.FPose> poses = poseConfig.Poses;
+
+            for (int poseIndex = 0; poseIndex < poses.Count; poseIndex++)
+            {
+                RPoseConfig.FPose pose = poses[poseIndex];
+
+                if (Wanted(pose.MovementStance, pose.WeaponStance, pose.IdleStance))
+                {
+                    ModLog.Once("entry:" + poseConfig.Name + pose.MovementStance + pose.WeaponStance + pose.IdleStance,
+                        "Anims: pose entry " + poseConfig.Name + " movement=" + pose.MovementStance + " weapon=" + pose.WeaponStance + " idle=" + pose.IdleStance +
+                        " anims=" + pose.Idle.FullBodyAnim + "/" + pose.Idle.UpperBodyAnim + ".");
+                    entries++;
+                    AddPoseAnims(anims, pose);
+                }
+            }
+
+            TArray<RPoseConfig.FTransition> transitions = poseConfig.Transitions;
+
+            for (int transitionIndex = 0; transitionIndex < transitions.Count; transitionIndex++)
+            {
+                RPoseConfig.FTransition transition = transitions[transitionIndex];
+
+                if (Wanted(transition.MovementStanceA, transition.WeaponStanceA, transition.IdleStanceA) ||
+                    Wanted(transition.MovementStanceB, transition.WeaponStanceB, transition.IdleStanceB))
+                {
+                    AddConfig(anims, transition.A2B);
+                    AddConfig(anims, transition.B2A);
+                }
+            }
+        }
+
+        List<string> missing = anims.Where(anim => !HasAnimInConfig(pawn, anim)).ToList();
+        List<AnimSet> toAdd = new List<AnimSet>();
+        List<string> notFound = new List<string>();
+
+        foreach (string anim in missing)
+        {
+            AnimSet? source = FindLoadedSetFor(mesh, anim);
+
+            if (source == null)
+            {
+                notFound.Add(anim);
+            }
+            else if (!toAdd.Any(set => set.Ptr == source.Ptr))
+            {
+                toAdd.Add(source);
+            }
+        }
+
+        ModLog.Info(
+            "Anims: stances [" + string.Join(", ", fresh) + "] -> " + entries + " pose entries, " + anims.Count + " anims, " + missing.Count + " missing" +
+            (notFound.Count > 0 ? ", not in any loaded set: " + string.Join(", ", notFound) : "") + "."
+        );
+
+        if (toAdd.Count > 0)
+        {
+            AddSets(pawn, toAdd, "stances " + string.Join("/", fresh));
+        }
+    }
+
+    private static void AddPoseAnims(List<string> anims, RPoseConfig.FPose pose)
+    {
+        AddConfig(anims, pose.Idle);
+        AddName(anims, pose.AdditiveIdle.AddAnim);
+        AddName(anims, pose.AdditiveIdle.SubtractAnim);
+
+        TArray<RPoseConfig.FOverlayDescription> overlays = pose.Overlays;
+
+        for (int index = 0; index < overlays.Count; index++)
+        {
+            AddConfig(anims, overlays[index].Anims);
+        }
+
+        TArray<RPoseConfig.FAdditiveDescription> additives = pose.AdditiveAnims;
+
+        for (int index = 0; index < additives.Count; index++)
+        {
+            AddName(anims, additives[index].Add);
+            AddName(anims, additives[index].Subtract);
+        }
+
+        RPoseConfig.FMovement movement = pose.Movement;
+        TArray<RPoseConfig.FMovementAnim> moves = movement.Anims;
+
+        for (int index = 0; index < moves.Count; index++)
+        {
+            AddConfig(anims, moves[index].Anims);
+            AddConfig(anims, moves[index].LeftAnims);
+            AddConfig(anims, moves[index].RightAnims);
+        }
+
+        AddConfig(anims, movement.Fall);
+        AddConfig(anims, movement.Land);
+    }
+
+    private static void AddConfig(List<string> output, RAnimConfig.FAnimConfig config)
+    {
+        AddName(output, config.FullBodyAnim);
+        AddName(output, config.UpperBodyAnim);
+
+        try
+        {
+            RDirectionalAnimConfig? directions = config.Directions;
+
+            if (directions != null && directions.IsValid)
+            {
+                foreach (PropertyInfo property in typeof(RDirectionalAnimConfig).GetProperties(BindingFlags.Instance | BindingFlags.Public))
+                {
+                    if (property.PropertyType == typeof(FName) && property.Name.StartsWith("Directions_", StringComparison.Ordinal))
+                    {
+                        AddName(output, (FName)property.GetValue(directions)!);
+                    }
+                }
+            }
+        }
+        catch
+        {
+        }
+    }
+
+    private static void AddName(List<string> output, FName name)
+    {
+        if (!Util.IsNone(name) && !output.Contains(name.ToString(), StringComparer.OrdinalIgnoreCase))
+        {
+            output.Add(name.ToString());
+        }
+    }
+}

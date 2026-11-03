@@ -1,0 +1,66 @@
+name = "DynamicCinematicHUD"
+version = "1.0.0"
+author = "CeZeY"
+description = "Smoothly fades the HUD out while gliding, grappling or diving and during finishers, then brings it back, plus optional FOV / camera distance / height offsets. Press F2 in game for the settings menu, or edit this file and save: changes apply within a second or two."
+
+[general]
+# master switch for the whole mod (HUD fading + camera tweaks)
+enabled = true
+
+# key that turns the whole mod on and off
+toggle_key = "F7"
+
+# key that opens and closes the settings menu
+menu_key = "F2"
+
+# true = writes detection details to DynamicCinematicHUD.log (which move / state is active).
+# Turn this on when something does not trigger the way you expect, then send the log.
+diagnostics = false
+
+[triggers]
+# situations that fade the HUD
+traversal = true
+finisher = true
+
+# seconds of continuous traversal (grapple / glide / dive) before the HUD fades
+traversal_delay = 0.6
+
+# seconds the HUD stays hidden after the situation ends before it comes back
+linger = 1.0
+
+[transition]
+# "smooth" = eased fade out / in, "instant" = cut
+style = "smooth"
+
+# seconds the HUD takes to fade out, and to come back
+fade_out = 0.6
+fade_in = 0.45
+
+[elements]
+# For every HUD element: which situations hide it.
+#   T = traversal   F = finisher   "" = never hidden
+entire_hud = "TF"
+health = "TF"
+targets = "F"
+radar = "TF"
+objectives = ""
+story = "F"
+alerts = ""
+room_name = ""
+
+[camera]
+# false = the mod never touches the camera
+enabled = true
+
+# degrees added to whatever FOV the game is using. 0 = untouched. Paused during cutscenes.
+fov = 6.0
+
+# camera distance in game units: positive = further back, negative = closer.
+# The game's wall collision does not know about this offset, so large values can clip through walls.
+distance = -10.0
+
+# camera height in game units
+height = 5.0
+
+# how fast the camera blends between the settings above (higher = snappier)
+blend_speed = 4.0

@@ -1,0 +1,34 @@
+name = "UniversalColorHUD"
+version = "1.0.0"
+author = "CeZeY"
+description = "Recolours the whole HUD with true colours, smooth blends and an optional colour cycle. Press the menu key in game to pick a colour, or edit the [hud] section below and save: either way it applies within a second or two."
+
+[hud]
+# default (the game's own blue), red, orange, yellow, green, cyan, blue, purple, pink, white,
+# joker (the game's own Joker tint), or any hex colour like "#FF8800" (the colour you will actually see)
+color = "red"
+
+# true = the HUD slowly cycles through every colour (ignores color while on), speed below is seconds per full cycle
+rainbow = false
+rainbow_speed = 10.0
+
+# how many times per second the cycle changes the colour: lower = lighter on weak PCs, higher = smoother (5 to 120)
+rainbow_updates_per_second = 20.0
+
+# seconds the HUD takes to blend into a new colour (0 = instant)
+transition_time = 0.4
+
+# true = the colour turns itself on after you load a save, false = press the toggle key
+auto_activate = true
+
+# seconds to wait once the HUD is ready before the colour fades in
+auto_press_delay = 6.0
+
+# key that turns the colour on and off (F1 to F12 and any other key name)
+toggle_key = "F6"
+
+# key that opens the in-game colour menu
+menu_key = "F1"
+
+# true = writes extra state information to the log, for bug reports
+diagnostics = false

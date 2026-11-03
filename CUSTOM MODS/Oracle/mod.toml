@@ -1,0 +1,65 @@
+name = "Oracle"
+author = "ZeidCeZeY"
+version = "2.0.0"
+description = "ORACLE // CHEAT TERMINAL. An in-game cheat and tweak menu with tabs for the player, combat, enemies, visuals, a full camera and FOV page, the Batmobile, the world, character switching, your own music and FUN gameplay modes (fall damage, stamina). Press F3 in game to open it, or hold BACK (View) on an Xbox controller. Everything you switch on is saved below and comes back after loading."
+
+[general]
+# key that opens and closes the Oracle menu
+menu_key = "F3"
+
+# true = cheats you leave on are switched back on every time a save loads
+remember_cheats = true
+
+# seconds to wait after a load before saved cheats switch back on
+apply_delay = 4.0
+
+# true = shows a small list of running cheats in the top right corner
+active_list = false
+
+# true = writes every command the mod sends to Oracle.log, for bug reports
+diagnostics = false
+
+# menu colour: emerald, cyan, blue, violet, magenta, red, orange, gold, white or rainbow
+menu_color = "emerald"
+
+# how fast the rainbow colour cycles (0.25 to 3.0)
+rainbow_speed = 1.0
+
+# true = lighter menu for slow PCs (rainbow steps 15 times a second, fewer effects)
+low_end_mode = false
+
+# true = adds NEW GAME ++ to the main menu once your save has a New Game + run.
+# It starts New Game + again from the beginning. Only read when the game starts, so restart after changing it.
+new_game_plus_plus = false
+
+[hotkeys]
+# Bind any cheat to a key: cheat_id = "KeyName". Toggles flip, sliders jump between normal and a preset value,
+# choices cycle, one-shot actions run (actions that change your save can't be bound).
+# Cheat ids:
+#   player:    god_mode, restore_health, move_speed, infinite_glide, glide_climb, gadget_no_cooldown, gadget_anywhere, smoke_duration, give_gadgets, silent_running, drone_invisible
+#   combat:    one_hit_ko, upgraded_batsuit, always_takedown, freeflow_focus, counter_icons, silent_takedowns, env_takedowns, predator_combos, double_shockwave
+#   enemies:   freeze_enemies, enemy_health, enemy_size, disarm_first_hit, force_riots, rioters_fight, ko_all, ko_all_but_one, destroy_weapons
+#   visual:    post_process, atmosphere, atmo_hue, atmo_strength, atmo_fog, atmo_desat, rain, rain_wetness, rain_area, hide_cape, batman_size, jammed_blast
+#   camera:    fov_world, cam_height, cam_shoulder, fov_aim, cam_distance, cam_pivot, glide_fov, glide_kick, glide_distance, car_fov, car_kick, car_distance, fov_preset, fov_readout, cam_steady, cam_no_shake, cam_reset
+#   batmobile: batmobile_invincible, infinite_power, no_cooldowns, perfect_aim, rescue_batmobile, kill_tanks
+#   world:     teleport_waypoint, teleport_fade, game_speed
+#   character: play_as, switch_character, back_to_batman, call_batmobile
+#   music:     music_track, music_play, music_next, music_prev, music_stop, music_volume, music_order, music_pause_with_game, music_rescan
+#   fun:       fall_damage, fall_height, stamina, stamina_drain, stamina_regen
+# Examples:
+# god_mode = "F5"
+# teleport_waypoint = "F8"
+
+[gamepad]
+# true = an Xbox (XInput) controller can open and use the Oracle menu
+enabled = true
+
+# button to hold to open or close the menu: back (View), start, a, b, x, y, lb, rb, ls, rs, up, down, left, right
+# combine buttons with +, for example "lb+rb". With back, a quick tap still opens the map.
+open_button = "back"
+
+# seconds to hold it (0 = open on press)
+open_hold = 0.5
+
+[cheats]
+# Saved by the menu. true/false for switches, numbers for sliders.
