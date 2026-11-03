@@ -1,3 +1,4 @@
-# Movesets and custom mods are downloaded by the configurator and checked against their git SHA-1, so store them byte for byte.
+# Movesets, custom mods and mod packs are downloaded by the configurator and checked against their git SHA-1, so store them byte for byte.
 CUSTOM[[:space:]]MODS/** -text
 MOVESETS/** -text
+MOD[[:space:]]PACKS/** -text

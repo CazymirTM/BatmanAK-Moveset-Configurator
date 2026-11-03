@@ -1,0 +1,4 @@
+name = "Batman Arsenal Pack"
+author = "ZeidCeZeY"
+version = "1.4.2"
+description = "Red Hood's dual handguns (hold 4, shares the REC gun slot) and a sniper rifle (hold 7, shares the Disruptor slot) for Batman: the Arkham Knight's own rifle from his boss fight, with a red laser sight while aiming (F6 toggles it). Both are lethal: shot thugs die and show as DECEASED in Detective Mode. A sniper kill scares the thugs who see it: they cower, then run away for a while. Includes Dead Zone Aim (aim lag + recoil for the sniper; settings in DZAim.ini) and a Batclaw Zip Kick (double tap + hold the Batclaw key). Settings in BatmanGuns.ini, BatmanSniper.ini and DZAim.ini. Supports Arkham Mod Menu (pause menu > MODS): PACK / GUNS / SNIPER / ZIP KICK ACTIVE switches, saved in Settings.ini."
