@@ -1,0 +1,9 @@
+# Read by the configurator (1.5.3 or newer), never installed. What's listed here is not a conflict, so installing
+# this pack doesn't disable it.
+
+# Scripts meant to exist in several mods. ModMenuClient.cs is Arkham Mod Menu's client: every mod that supports the
+# menu has its own unchanged copy. One listing covers every mod in the configurator.
+scripts = ["ModMenuClient.cs"]
+
+# Mods in BmGame\Mods this pack is made to work with.
+mods = ["ArkhamModMenu"]
