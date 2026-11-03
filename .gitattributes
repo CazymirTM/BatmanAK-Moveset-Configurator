@@ -1,0 +1,2 @@
+# Custom mods are downloaded by the configurator and checked against their git SHA-1, so store them byte for byte.
+CUSTOM[[:space:]]MODS/** -text

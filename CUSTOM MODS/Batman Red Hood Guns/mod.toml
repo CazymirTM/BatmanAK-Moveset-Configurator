@@ -1,0 +1,4 @@
+name = "Batman Red Hood Guns"
+author = "ZeidCeZeY"
+version = "1.2.0"
+description = "Gives Batman Red Hood's dual handguns (Red Hood Story Pack) as a secondary gadget sharing the REC gun's slot (key 4): hold 4 to switch between the REC gun and the guns. Dead zone aiming with recoil, lethal shots, 12-round clip with an ammo counter and R to reload, quickfire with double-tap 4, thigh holsters, and F5 to keep the pistols in his hands. Xbox controller support (Y/X on the gadget wheel, LT+X to reload). Settings in BatmanGuns.ini. F10 = state dump."
