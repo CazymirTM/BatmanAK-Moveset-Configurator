@@ -1,0 +1,1 @@
+Joker-style fatal takedowns and counters with Scarecrow fight animations, plus the Jokerfied weapon and forced throw counters. Includes Jokerfied.cs, which this moveset needs for some animations.
