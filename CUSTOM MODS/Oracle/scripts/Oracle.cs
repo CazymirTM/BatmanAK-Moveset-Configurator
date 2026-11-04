@@ -85,6 +85,7 @@ public partial class Oracle : Script
         }
         ForgetRain();
         ResetAtmosphereCache();
+        ForgetEnemies();
         ArmApply();
     }
 
@@ -108,6 +109,7 @@ public partial class Oracle : Script
         }
 
         RestoreCamera();
+        RestoreEnemies();
         RestoreGlide();
         StaminaOff();
 
@@ -332,6 +334,7 @@ public partial class Oracle : Script
             RainTick(dt);
             PostProcessTick();
             CameraTick();
+            EnemyTick();
         }
         catch (Exception ex)
         {

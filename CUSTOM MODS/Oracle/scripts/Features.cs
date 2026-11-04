@@ -60,6 +60,7 @@ public partial class Oracle
         public bool Fast;
         public bool Pref;
         public bool Confirm;
+        public Func<bool>? Show;
 
         public bool Active => !Pref && Kind switch
         {
@@ -261,6 +262,8 @@ public partial class Oracle
         Action("ko_all", "KO ALL ENEMIES", "Knocks out every enemy in the area.", () => Cheats().DebugKillAllEnemies());
         Action("ko_all_but_one", "KO ALL BUT ONE", "Leaves exactly one enemy standing.", () => Cheats().DebugKillAllButOneEnemyInRoom());
         Action("destroy_weapons", "DESTROY ALL WEAPONS", "Removes guns and melee weapons from the area.", () => Cheats().DebugDestroyAllWeapons());
+
+        BuildEnemies();
 
         Tab(TabVisual);
         Group("SCREEN");
@@ -504,6 +507,17 @@ public partial class Oracle
 
     private static void SetDebugFlag(string prop, bool on)
     {
+        FindPdd();
+        if (_pdd == null)
+            return;
+
+        var pi = typeof(RPersistentDebugData).GetProperty(prop);
+        if (pi != null && (bool)pi.GetValue(_pdd)! != on)
+            pi.SetValue(_pdd, on);
+    }
+
+    private static void FindPdd()
+    {
         if (_pdd == null || !_pdd.IsValid)
         {
             _pdd = null;
@@ -517,12 +531,6 @@ public partial class Oracle
             }
         }
 
-        if (_pdd == null)
-            return;
-
-        var pi = typeof(RPersistentDebugData).GetProperty(prop);
-        if (pi != null && (bool)pi.GetValue(_pdd)! != on)
-            pi.SetValue(_pdd, on);
     }
 
     private const string JammedCls = "RBMWeaponRanged";

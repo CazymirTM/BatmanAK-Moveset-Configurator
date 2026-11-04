@@ -1,5 +1,33 @@
 # Changelog
 
+## 2.1.0 (2026-11-04)
+
+More FOV control and a much bigger ENEMIES tab. Enemy settings were measured in real fights against normal ones, and options that did nothing were left out.
+
+New: CAMERA tab
+- FOV BY SITUATION: separate FOV sliders for walking, running, stealth, combat, takedowns, grappling, swinging, railings, climbing and ledges, and falling. They ease in and out as the situation changes, and also reach cameras that have no FOV setting of their own.
+- SITUATION FOV BLEND: how quickly the view eases to the next situation's FOV.
+- CAMERA BLEND TIME: how long the camera takes to glide to its new position. Lower is snappier and cuts the zoom-in when you stop running.
+- CAMERA BY SITUATION: pick a situation, then set its camera back, side, height and pivot on their own.
+- GLIDE CAMERA HEIGHT and GLIDE CAMERA SIDE.
+- MY PRESET SLOT: three slots of your own to save and load camera settings, stored as text files in the mod's camera_slots folder so you can share them.
+
+New: ENEMIES tab
+- AGGRESSION: Time Between Attacks, Attack Wind-Up, Everyone Attacks At Once (brutal) and No Double Or Triple Attacks.
+- TOUGHNESS: Damage They Deal, Time Knocked Down, Hit Force and Knockdowns (vanilla, always or never).
+- ATTACK TYPES: No Grabs, No Charge Attacks, No Fury Attacks, Ninjas Can't Counter, No Medic Revives and No Medic Charge-Up.
+- DIFFICULTY: Ignore Dynamic Difficulty and Force Story Chapter. On a finished save, free roam fights can run at beginner values until Ignore Dynamic Difficulty is on.
+
+Fixes
+- Camera Height, Shoulder Offset, Camera Distance and the Batmobile distance now also apply to the camera setups they used to miss, such as swinging, climbing, ledge hangs, takedowns and more Batmobile cameras.
+- FIELD OF VIEW and AIM & ZOOM FOV now cover more of the game's FOV settings.
+
+Notes
+- No Fury Attacks, Ninjas Can't Counter and the two medic options weren't tested in a fight, because those enemies weren't in the test fights. No Charge Attacks and No Double Or Triple Attacks looked right in testing, on a small sample.
+- New hotkey ids for everything above, listed in mod.toml.
+
+Thanks to the CameraLab and EnemyLab scripts a friend shared, which started this update.
+
 ## 2.0.0 (2026-10-31)
 
 The biggest Oracle update so far: two new tabs and a reworked glide.

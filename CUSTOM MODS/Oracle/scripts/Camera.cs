@@ -24,9 +24,10 @@ public partial class Oracle
     private delegate ref Vector3 CamVecRef(R3rdPersonCamera cam);
 
     private readonly record struct CamSet(float Fov, float Height, float Shoulder, float Pull, float Pivot, float Aim,
-        float GlideFov, float GlideKick, float GlideDist, float CarFov, float CarKick, float CarDist, bool Steady, bool NoShake);
+        float GlideFov, float GlideKick, float GlideDist, float CarFov, float CarKick, float CarDist, bool Steady, bool NoShake,
+        float GlideUp, float GlideSide, float SitSig, bool SitOn);
 
-    private static readonly CamSet VanillaCam = new(0f, 0f, 1f, 0f, 0f, 1f, 0f, 1f, 1f, 0f, 1f, 1f, false, false);
+    private static readonly CamSet VanillaCam = new(0f, 0f, 1f, 0f, 0f, 1f, 0f, 1f, 1f, 0f, 1f, 1f, false, false, 0f, 0f, 0f, false);
 
     private sealed record CamPreset(string Key, string Label, float Fov, float Height, float Shoulder, float Pull, float Pivot, float GlideFov, float GlideDist, float CarFov, float CarDist,
         float GlideKick = 1f, float CarKick = 1f);
@@ -57,7 +58,7 @@ public partial class Oracle
         "SlideStateCameraFOVAngle", "CornerStateFOVAngle", "OmnitronCornerStateFOVAngle", "RHDCornerStateFOVAngle", "VoiceSynthCornerStateFOVAngle",
         "WallClimbStartCameraFOVAngle", "PounceCameraFOVAngle", "UsingSpotlightStateCameraFOVAngle", "ForensicsScanStateCameraFOVAngle",
         "HelicopterCameraFOVAngle", "ScarecrowTakedownCameraFOVAngle", "PairedAnimationStateCameraFOVAngle", "DialogueStateCameraFOVAngle",
-        "ThugCameraFOVAngle", "JokerFPSFov"
+        "ThugCameraFOVAngle", "JokerFPSFov", "CopSittingAtBarFov", "CustomCameraFOV"
     };
 
     private static readonly string[] GlideFovs = { "GlidingCameraFOVAngle", "BoostGlidingCameraFOVAngle", "EdgeSwingCameraFOVAngle" };
@@ -65,7 +66,7 @@ public partial class Oracle
     private static readonly string[] CarFovs =
     {
         "DrivingCamFOV", "DrivingCamFOV1", "DrivingCamFOV2", "BoostingCamFOV", "BoostingCamFOV1", "BoostingCamFOV2", "BattleModeCamFOV",
-        "BattleModeWinchCamFOV", "AntiPersonelBattleModeCamFOV", "ChasingCamFOV", "RidingCarCamFOV", "DiveToBatmobilePickupFOVAngle"
+        "BattleModeWinchCamFOV", "AntiPersonelBattleModeCamFOV", "ChasingCamFOV", "RidingCarCamFOV", "DiveToBatmobilePickupFOVAngle", "BatmobileConversationCamFOV"
     };
 
     private static readonly string[] AimFovs =
@@ -74,7 +75,8 @@ public partial class Oracle
         "JokerGunAimCameraFOVAngle", "JokerGunZoomAimCameraFOVAngle", "JokerGunZoomRoom3AimCameraFOVAngle", "LineLauncherAimCameraFOVAngle",
         "MagneticBlastAimCameraFOVAngle", "OmnitronAimCameraFOVAngle", "RHDAimCameraFOVAngle", "DisruptorSniperFOVAngle", "DisruptorSniperZoomedFOVAngle",
         "ZoomStateCameraFOVAngle", "ThugZoomCameraFOVAngle", "ZoomFOV", "ZoomedFOVAngle", "ResonatorFOVAngle", "ForensicsFilterStateCameraFOVAngle",
-        "CopCameraZoomFOV", "JokerFPSZoomFov", "GauntletCameraFOVAngle"
+        "CopCameraZoomFOV", "JokerFPSZoomFov", "GauntletCameraFOVAngle", "ExtraZoomFOV", "ForceZoomFOVAngle", "CustomCameraZoomFOV",
+        "RHDPasswordCrackFOVAngle", "RHDPasswordCrack43FOVAngle"
     };
 
     private static readonly HashSet<string> AimStates = new(StringComparer.OrdinalIgnoreCase)
@@ -92,13 +94,19 @@ public partial class Oracle
         "WalkCamConfig", "WalkCanisterCamConfig", "AgilityWalkCamConfig", "AlternativeWalkCamConfig", "RunCamConfig", "RooftopRunCamConfig",
         "StealthCamConfig", "CombatWalkCamConfig", "CorridorCombatCamConfig", "HighCombatCamConfig", "DemonTrialsCamConfig", "RailingCamConfig",
         "GrateCameraConfig", "LedgeSwingCamConfig", "GrappleCamConfig", "HqGrappleStartCamConfig", "PerchLedgeCamConfig", "SilentPredatorCamConfig",
-        "VantageClimbCamConfig", "IntroCamConfig", "FloorAttackCamConfig", "ThugCamConfig"
+        "VantageClimbCamConfig", "IntroCamConfig", "FloorAttackCamConfig", "ThugCamConfig", "StandingHoldCamConfig", "StandingGrabCamConfig", "FearTakedownCamConfig",
+        "GrappleRescueCamConfig", "CapeChuteConfig", "LedgeHangCamConfig", "LedgeHangKickedByThugCamConfig", "LedgeHangTakedownStartCamConfig", "LedgeHangTakedownCamConfig",
+        "QuickTakedownCamConfig", "GenericFarFreeCamConfig", "HangPointCamConfig", "StealthWallCamConfig", "CrouchUnderObstacleCamConfig", "SwingingCamConfig",
+        "WallClimbCamConfig", "WallClimbStartCamConfig", "PounceCamConfig", "SwingingFromAboveCamConfig", "TakedownFromAboveCamConfig", "PerchLedgeSwingCamConfig",
+        "NightwingBossFightCamConfig", "LookDownCamConfig", "HighGrateCameraConfig", "SlideCameraConfig", "CeilingClimbCamConfig", "CeilingToLedgeHangCamConfig",
+        "CeilingToCatwalkCamConfig", "DeepFallLandCamConfig", "ScarerowBossCamConfig", "GauntletCamConfig", "GauntletPerchCamConfig"
     };
 
     private static readonly string[] CarCfgs =
     {
         "DrivingCamConfig", "DrivingCamConfig1", "DrivingCamConfig2", "BoostingCamConfig", "BoostingCamConfig1", "BoostingCamConfig2",
-        "BattleModeCamConfig", "BattleModeWinchCamConfig"
+        "BattleModeCamConfig", "BattleModeWinchCamConfig", "BattleModeAbseilingCamConfig", "FleeingCamConfig", "BarrelRollCamConfig", "ChasingCamConfig",
+        "GlideInBatmobileCamConfig", "RidingCarCamConfig", "BatmobileConversationCamConfig", "DiveToBatmobilePickupCamConfig"
     };
 
     private sealed class CamStore
@@ -132,7 +140,7 @@ public partial class Oracle
 
     private static Feature? _fovWorld, _camHeight, _camShoulder, _camPull, _camPivot, _fovAim;
     private static Feature? _glideFov, _glideKick, _glideDist, _carFov, _carKick, _carDist;
-    private static Feature? _camSteady, _camNoShake, _fovReadout;
+    private static Feature? _camSteady, _camNoShake, _fovReadout, _glideUp, _glideSide;
 
     private static string Deg(float v) => MathF.Abs(v) < 0.01f ? "DEFAULT" : (v > 0 ? "+" : "") + v.ToString("0", CultureInfo.InvariantCulture);
 
@@ -158,6 +166,8 @@ public partial class Oracle
         _fovAim = Slider("fov_aim", "AIM & ZOOM FOV", "Field of view while aiming (batarang, line launcher, remote claw, hacking device, disruptor) and when zooming with Z. Lower = more zoom, higher = wider.",
             1f, 0.5f, 1.6f, 0.05f, 1.3f, Percent, _ => { });
 
+        BuildSituations();
+
         Group("PIVOT & PULL");
         _camPull = Slider("cam_distance", "CAMERA DISTANCE", "Pulls the camera further back from your character on foot, or closer in with negative values.",
             0f, -60f, 400f, 10f, 150f, Units, _ => { });
@@ -171,6 +181,10 @@ public partial class Oracle
             1f, 0f, 3f, 0.25f, 2f, Percent, _ => { });
         _glideDist = Slider("glide_distance", "GLIDE CAMERA DISTANCE", "How far behind you the camera trails while gliding.",
             1f, 0.5f, 2.5f, 0.1f, 1.5f, Times, _ => { });
+        _glideUp = Slider("glide_up", "GLIDE CAMERA HEIGHT", "Raises or lowers the camera while gliding.",
+            0f, -200f, 200f, 10f, 60f, Units, _ => { });
+        _glideSide = Slider("glide_side", "GLIDE CAMERA SIDE", "Moves the camera to the side while gliding. Negative is left, positive is right.",
+            0f, -200f, 200f, 10f, 60f, Units, _ => { });
 
         Group("BATMOBILE");
         _carFov = Slider("car_fov", "BATMOBILE FOV", "Extra field of view while driving and in battle mode, on top of FIELD OF VIEW.",
@@ -197,6 +211,7 @@ public partial class Oracle
         _camSteady = Toggle("cam_steady", "STEADY CAMERA", "Stops the camera swaying with your character's hips when walking and running.", _ => { });
         _camNoShake = Toggle("cam_no_shake", "NO SCREEN SHAKE", "Turns off camera shakes from explosions, landings, gliding and the Batmobile.", _ => { });
         Action("cam_reset", "RESET CAMERA", "Puts every camera and FOV setting on this page back to the game's default.", ResetCameraFeatures);
+        BuildCameraSlots();
     }
 
     private static void ApplyCamPreset(int i)
@@ -217,7 +232,13 @@ public partial class Oracle
         SetCamFeature(_glideKick, p.GlideKick);
         SetCamFeature(_carKick, p.CarKick);
         if (i == 1)
+        {
             SetCamFeature(_fovAim, 1f);
+            SetCamFeature(_glideUp, 0f);
+            SetCamFeature(_glideSide, 0f);
+            SetCamFeature(_camBlend, 1f);
+            ResetSituations();
+        }
     }
 
     private static void SetCamFeature(Feature? f, float v)
@@ -233,8 +254,9 @@ public partial class Oracle
 
     private static void ResetCameraFeatures()
     {
-        foreach (Feature? f in new[] { _fovWorld, _camHeight, _camShoulder, _camPull, _camPivot, _fovAim, _glideFov, _glideKick, _glideDist, _carFov, _carKick, _carDist })
+        foreach (Feature? f in new[] { _fovWorld, _camHeight, _camShoulder, _camPull, _camPivot, _fovAim, _glideFov, _glideKick, _glideDist, _carFov, _carKick, _carDist, _glideUp, _glideSide, _camBlend })
             SetCamFeature(f, f?.Default ?? 0f);
+        ResetSituations();
 
         foreach (Feature? f in new[] { _camSteady, _camNoShake })
         {
@@ -255,14 +277,14 @@ public partial class Oracle
     private static CamSet WantedCam() => new(
         _fovWorld?.Value ?? 0f, _camHeight?.Value ?? 0f, _camShoulder?.Value ?? 1f, _camPull?.Value ?? 0f, _camPivot?.Value ?? 0f, _fovAim?.Value ?? 1f,
         _glideFov?.Value ?? 0f, _glideKick?.Value ?? 1f, _glideDist?.Value ?? 1f, _carFov?.Value ?? 0f, _carKick?.Value ?? 1f, _carDist?.Value ?? 1f,
-        _camSteady?.On ?? false, _camNoShake?.On ?? false);
+        _camSteady?.On ?? false, _camNoShake?.On ?? false, _glideUp?.Value ?? 0f, _glideSide?.Value ?? 0f, SitSignature(out bool sitOn), sitOn);
 
     private static float[] Pack(CamSet s) => new[]
     {
-        s.Fov, s.Height, s.Shoulder, s.Pull, s.Pivot, s.Aim, s.GlideFov, s.GlideKick, s.GlideDist, s.CarFov, s.CarKick, s.CarDist, s.Steady ? 1f : 0f, s.NoShake ? 1f : 0f
+        s.Fov, s.Height, s.Shoulder, s.Pull, s.Pivot, s.Aim, s.GlideFov, s.GlideKick, s.GlideDist, s.CarFov, s.CarKick, s.CarDist, s.Steady ? 1f : 0f, s.NoShake ? 1f : 0f, s.GlideUp, s.GlideSide, s.SitSig, s.SitOn ? 1f : 0f
     };
 
-    private static CamSet Unpack(float[] a) => a.Length < 14 ? VanillaCam : new(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9], a[10], a[11], a[12] > 0.5f, a[13] > 0.5f);
+    private static CamSet Unpack(float[] a) => a.Length < 18 ? VanillaCam : new(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9], a[10], a[11], a[12] > 0.5f, a[13] > 0.5f, a[14], a[15], a[16], a[17] > 0.5f);
 
     private static void LoadCamStore()
     {
@@ -339,6 +361,7 @@ public partial class Oracle
             ClearShakes(cam);
 
         AimTick(cam, want.Aim);
+        BlendTick(cam);
 
         long now = Stopwatch.GetTimestamp();
         bool recheck = Stopwatch.GetElapsedTime(_camChecked, now).TotalSeconds >= CamRecheck;
@@ -429,6 +452,7 @@ public partial class Oracle
         _camState = "";
         _aimState = "";
         _aimOn = false;
+        ForgetSituationFov();
         SaveCamStore();
     }
 
@@ -451,7 +475,7 @@ public partial class Oracle
         foreach (string n in SwayFloats)
             CamFloat(cam, n, v => s.Steady ? 0f : v);
         foreach (string n in GlideOffsets)
-            CamVec(cam, n, v => v * s.GlideDist);
+            CamVec(cam, n, v => new Vector3(v.X * s.GlideDist, v.Y * s.GlideDist + s.GlideSide, v.Z * s.GlideDist + s.GlideUp));
 
         bool swayNow = cam.bSwayWithPelvis;
         if (s.Steady)
@@ -474,7 +498,7 @@ public partial class Oracle
         R3rdPersonCamera.FFreeCameraConfig liveNew = default;
         foreach (string n in FootCfgs)
         {
-            if (CamConfig(cam, n, c => FootConfig(c, s), current, out R3rdPersonCamera.FFreeCameraConfig made) && liveCfg == null)
+            if (CamConfig(cam, n, c => SitConfig(FootConfig(c, s), n, s), current, out R3rdPersonCamera.FFreeCameraConfig made) && liveCfg == null)
             {
                 liveCfg = n;
                 liveNew = made;
@@ -715,6 +739,8 @@ public partial class Oracle
         try
         {
             R3rdPersonCamera? cam = PlayerCam();
+            if (cam != null && cam.Ptr == _cam.Ptr)
+                RestoreBlend(cam);
             if (cam != null && cam.Ptr == _cam.Ptr && (_cam.Live || _camApplied != VanillaCam))
                 ApplyCamera(cam, VanillaCam);
         }
@@ -759,7 +785,7 @@ public partial class Oracle
         string mode = _camStateCat switch { CatGlide => "GLIDE", CatCar => "BATMOBILE", CatAim => "AIM", _ => "ON FOOT" };
         string line1 = "FOV " + real.ToString("0.0", CultureInfo.InvariantCulture) + "  ON SCREEN";
         string line2 = "GAME " + game.ToString("0.0", CultureInfo.InvariantCulture) + "  " + mode + "  " + state.ToUpperInvariant();
-        string line3 = "DISTANCE " + dist.ToString("0", CultureInfo.InvariantCulture);
+        string line3 = "DISTANCE " + dist.ToString("0", CultureInfo.InvariantCulture) + "  " + SitReadout();
 
         _ga = 1f;
         float scale = 0.66f;

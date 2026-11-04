@@ -115,6 +115,9 @@ public partial class Oracle
         string[] lastGroup = new string[PageNames.Length];
         foreach (Feature f in Features)
         {
+            if (f.Show != null && !f.Show())
+                continue;
+
             List<MenuRow> rows = pages[f.Tab];
             if (f.Group != lastGroup[f.Tab])
             {

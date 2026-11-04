@@ -1,7 +1,7 @@
 name = "Oracle"
 author = "ZeidCeZeY"
-version = "2.0.0"
-description = "ORACLE // CHEAT TERMINAL. An in-game cheat and tweak menu with tabs for the player, combat, enemies, visuals, a full camera and FOV page, the Batmobile, the world, character switching, your own music and FUN gameplay modes (fall damage, stamina). Press F3 in game to open it, or hold BACK (View) on an Xbox controller. Everything you switch on is saved below and comes back after loading."
+version = "2.1.0"
+description = "ORACLE // CHEAT TERMINAL. An in-game cheat and tweak menu with tabs for the player, combat, full enemy tuning (attack rate, damage, knockdowns, story chapter, dynamic difficulty), visuals, a full camera page with FOV and offsets for every situation, the Batmobile, the world, character switching, your own music and FUN gameplay modes (fall damage, stamina). Press F3 in game to open it, or hold BACK (View) on an Xbox controller. Everything you switch on is saved below and comes back after loading."
 
 [general]
 # key that opens and closes the Oracle menu
@@ -38,9 +38,14 @@ new_game_plus_plus = false
 # Cheat ids:
 #   player:    god_mode, restore_health, move_speed, infinite_glide, glide_climb, gadget_no_cooldown, gadget_anywhere, smoke_duration, give_gadgets, silent_running, drone_invisible
 #   combat:    one_hit_ko, upgraded_batsuit, always_takedown, freeflow_focus, counter_icons, silent_takedowns, env_takedowns, predator_combos, double_shockwave
-#   enemies:   freeze_enemies, enemy_health, enemy_size, disarm_first_hit, force_riots, rioters_fight, ko_all, ko_all_but_one, destroy_weapons
+#   enemies:   freeze_enemies, enemy_health, enemy_size, disarm_first_hit, force_riots, rioters_fight, ko_all, ko_all_but_one, destroy_weapons,
+#              enemy_attack_gap, enemy_windup, enemy_full_on, enemy_no_simul, enemy_damage, enemy_stun_time, enemy_hit_force, enemy_knockdown,
+#              enemy_no_grab, enemy_no_charge, enemy_no_fury, enemy_no_ninja, enemy_no_revive, enemy_no_buff, enemy_ignore_dda, enemy_chapter
 #   visual:    post_process, atmosphere, atmo_hue, atmo_strength, atmo_fog, atmo_desat, rain, rain_wetness, rain_area, hide_cape, batman_size, jammed_blast
 #   camera:    fov_world, cam_height, cam_shoulder, fov_aim, cam_distance, cam_pivot, glide_fov, glide_kick, glide_distance, car_fov, car_kick, car_distance, fov_preset, fov_readout, cam_steady, cam_no_shake, cam_reset
+#              cam_blend, sit_blend, sit_edit, glide_up, glide_side, cam_slot, cam_slot_save, cam_slot_load,
+#              sit_fov_<situation>, sit_back_<situation>, sit_side_<situation>, sit_up_<situation>, sit_pivot_<situation>
+#              (situations: walk, run, stealth, combat, takedown, grapple, swing, railing, climb, fall)
 #   batmobile: batmobile_invincible, infinite_power, no_cooldowns, perfect_aim, rescue_batmobile, kill_tanks
 #   world:     teleport_waypoint, teleport_fade, game_speed
 #   character: play_as, switch_character, back_to_batman, call_batmobile
