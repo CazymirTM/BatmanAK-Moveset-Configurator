@@ -26,7 +26,7 @@ Notes
 - No Fury Attacks, Ninjas Can't Counter and the two medic options weren't tested in a fight, because those enemies weren't in the test fights. No Charge Attacks and No Double Or Triple Attacks looked right in testing, on a small sample.
 - New hotkey ids for everything above, listed in mod.toml.
 
-Thanks to the CameraLab and EnemyLab scripts a friend shared, which started this update.
+Thanks to FushWasTrolled for the CameraLab and EnemyLab scripts, which started this update.
 
 ## 2.0.0 (2026-10-31)
 
