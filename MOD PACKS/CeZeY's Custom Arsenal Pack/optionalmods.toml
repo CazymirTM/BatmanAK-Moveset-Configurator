@@ -1,0 +1,9 @@
+# Read by the configurator (1.5.4 or newer), never installed. Mods that go well with this pack but aren't needed for it
+# to work. Each one shows on the pack's card, and a recommended one is offered after the first install.
+
+[[mod]]
+name = "Arkham Mod Menu"
+folder = "ArkhamModMenu"
+url = "https://www.nexusmods.com/batmanarkhamknight/mods/3635"
+why = "Switch parts of the pack on and off from the pause menu."
+recommended = true
