@@ -82,6 +82,8 @@ public class BatmanHoodCustomArmed : Script
 
     private static readonly TimeSpan NativeSwitchDelay = TimeSpan.FromSeconds(2);
     private static readonly TimeSpan PreloadSettleDelay = TimeSpan.FromMilliseconds(1500);
+    private static readonly TimeSpan SwitchRetryInterval = TimeSpan.FromSeconds(1);
+    private static readonly TimeSpan BatmanReturnTimeout = TimeSpan.FromSeconds(6);
 
     private string _logPath = "";
     private InitState _state = InitState.WaitingForBatman;
@@ -95,7 +97,10 @@ public class BatmanHoodCustomArmed : Script
     private bool _bootstrapStartedThisSession = false;
     private bool _playersPreloaded = false;
     private bool _consolePrimedDuringBootstrap = false;
+    private bool _gameEntered = false;
     private nint _lastAppliedBatmanPtr = 0;
+    private int _appliedCounterCount = -1;
+    private DateTime _nextSwitchAttempt = DateTime.MinValue;
 
     private RSeqAct_SwitchPlayerCharacter _activeSwitch;
     private PlayerStart _activePlayerStart;
@@ -127,26 +132,51 @@ public class BatmanHoodCustomArmed : Script
         Log("BatmanHoodCustomArmed reloaded with the pack. Bootstrap not repeated.");
     }
 
+    public override void OnEnterMenu()
+    {
+        _gameEntered = false;
+        _lastAppliedBatmanPtr = 0;
+        _appliedCounterCount = -1;
+
+        if (_bootstrapDone)
+        {
+            _state = InitState.ApplyingConsole;
+            return;
+        }
+
+        _bootstrapInProgress = false;
+        _bootstrapStartedThisSession = false;
+        _state = InitState.WaitingForBatman;
+    }
+
     public override void OnEnterGame()
     {
+        _gameEntered = true;
+
         if (_bootstrapInProgress)
         {
             Log("OnEnterGame during native character switch ignored. Current bootstrap continues.");
             return;
         }
 
-        _lastAppliedBatmanPtr = 0;
         _nextReadyCheck = DateTime.MinValue;
 
         if (_bootstrapDone)
         {
+            if (AlreadyApplied())
+            {
+                Log("OnEnterGame: Console.txt is already on this Batman. Not applying it again.");
+                return;
+            }
+
+            _lastAppliedBatmanPtr = 0;
             _state = InitState.ApplyingConsole;
-            Log("OnEnterGame: bootstrap already completed this session. Re-applying Console.txt.");
+            Log("OnEnterGame: bootstrap already completed this session. Applying Console.txt.");
         }
         else if (!_bootstrapStartedThisSession)
         {
             _state = InitState.WaitingForBatman;
-            Log("OnEnterGame: one-time native bootstrap switch queued.");
+            Log("OnEnterGame: the loading screen ended before Batman was ready. Bootstrap waits for the next load from the menu.");
         }
         else
         {
@@ -197,7 +227,10 @@ public class BatmanHoodCustomArmed : Script
 
     private void StartBootstrapWhenBatmanReady(RPlayerController controller)
     {
-        if (_bootstrapInProgress || _bootstrapDone)
+        if (_bootstrapInProgress || _bootstrapDone || _gameEntered)
+            return;
+
+        if (DateTime.UtcNow < _nextSwitchAttempt)
             return;
 
         RPawnPlayerBmBase batman = TryGetBatman();
@@ -210,6 +243,7 @@ public class BatmanHoodCustomArmed : Script
         _bootstrapInProgress = true;
         _bootstrapStartedThisSession = true;
 
+        _nextSwitchAttempt = DateTime.UtcNow + SwitchRetryInterval;
         Log("Batman ready. Starting the single native switch to " + BOOTSTRAP_NAME + ".");
 
         if (!BeginCharacterSwitch(controller, BOOTSTRAP_PACKAGE, BOOTSTRAP_CLASS, BOOTSTRAP_NAME))
@@ -261,10 +295,15 @@ public class BatmanHoodCustomArmed : Script
         if (!_consolePrimedDuringBootstrap)
         {
             Log("Resolving Binaries\\Console.txt while bootstrap character is active.");
-            controller.ConsoleCommand(CONSOLE_EXEC_COMMAND, true);
             _consolePrimedDuringBootstrap = true;
+            controller.ConsoleCommand(CONSOLE_EXEC_COMMAND, true);
             Log("Bootstrap-side Console resolve issued. Starting Batman return.");
         }
+
+        if (DateTime.UtcNow < _nextSwitchAttempt)
+            return;
+
+        _nextSwitchAttempt = DateTime.UtcNow + SwitchRetryInterval;
 
         if (!BeginCharacterSwitch(controller, BATMAN_PACKAGE, BATMAN_CLASS, BATMAN_NAME))
         {
@@ -284,7 +323,16 @@ public class BatmanHoodCustomArmed : Script
 
         RPawnPlayerBmBase batman = TryGetBatman();
         if (!IsUsableBatman(batman))
+        {
+            if (DateTime.UtcNow >= _switchReadyAt + BatmanReturnTimeout)
+            {
+                Log("Batman did not come back. Sending the return switch again.");
+                _switchReadyAt = DateTime.UtcNow + NativeSwitchDelay;
+                BeginCharacterSwitch(controller, BATMAN_PACKAGE, BATMAN_CLASS, BATMAN_NAME);
+            }
+
             return;
+        }
 
         if (batman.InvManager == null || !batman.InvManager.IsValid)
             return;
@@ -317,11 +365,15 @@ public class BatmanHoodCustomArmed : Script
         }
 
         Log("Applying Binaries\\Console.txt to Batman Ptr=0x" + batman.Ptr.ToString("X"));
-        controller.ConsoleCommand(CONSOLE_EXEC_COMMAND, true);
 
         _lastAppliedBatmanPtr = batman.Ptr;
+        _appliedCounterCount = -1;
         _state = InitState.Ready;
         _nextReadyCheck = DateTime.UtcNow + TimeSpan.FromMilliseconds(500);
+
+        controller.ConsoleCommand(CONSOLE_EXEC_COMMAND, true);
+
+        _appliedCounterCount = batman.CounterList.Count;
 
         Log("BatmanHoodCustomArmed: Console.txt applied automatically. No manual steps were needed.");
     }
@@ -342,6 +394,15 @@ public class BatmanHoodCustomArmed : Script
             Log("Batman pawn instance changed. Re-applying Console.txt without repeating the bootstrap.");
             _state = InitState.ApplyingConsole;
         }
+    }
+
+    private bool AlreadyApplied()
+    {
+        RPawnPlayerBmBase batman = TryGetBatman();
+
+        return IsUsableBatman(batman) &&
+               batman.Ptr == _lastAppliedBatmanPtr &&
+               batman.CounterList.Count == _appliedCounterCount;
     }
 
     private bool BeginCharacterSwitch(
@@ -483,7 +544,8 @@ public class BatmanHoodCustomArmed : Script
         return pawn != null &&
                pawn.IsValid &&
                pawn.Ptr != 0 &&
-               !pawn.IsClassDefaultObject;
+               !pawn.IsClassDefaultObject &&
+               pawn.Class.Name.ToString().StartsWith("RPawnPlayerBm", StringComparison.Ordinal);
     }
 
     private void LogOncePerSecond(string text)

@@ -97,6 +97,12 @@ public class BatmanRobinStaffScript : Script
     {
         StaffConfig.Tick();
 
+        if (Staff.Batman() is RPawnPlayer batman)
+        {
+            StaffMoves.RepairWeaponConfig(batman);
+            StaffGuard.Track(batman);
+        }
+
         if (!Arsenal.Staff)
         {
             Deactivate();

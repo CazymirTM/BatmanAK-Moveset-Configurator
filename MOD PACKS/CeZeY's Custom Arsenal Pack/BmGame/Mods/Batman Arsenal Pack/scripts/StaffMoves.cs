@@ -34,6 +34,8 @@ internal static unsafe class StaffMoves
     private static readonly string[] ListNames = { "AutoStrikeList", "CounterList", "SimultaneousCounterList", "TakedownList" };
     private const string RobinCombatSet = "Anim_Robin_Combat.Code.RB_Combat";
     private const string RobinStrikeSet = "dlc_anim_robin_combat.Code.RB_Attack";
+    private const string RobinCombatName = "RB_Combat";
+    private const long WeaponConfigCheckMs = 500;
 
     private static readonly List<Slot> slots = new List<Slot>();
     private static readonly HashSet<long> rootedLists = new HashSet<long>();
@@ -44,6 +46,7 @@ internal static unsafe class StaffMoves
     private static IntPtr activePawn = IntPtr.Zero;
     private static AnimSet? savedCombat, savedStrike;
     private static RPawnPlayerConfig? savedConfig;
+    private static long nextWeaponConfigCheck;
 
     public static bool RobinActive => activePawn != IntPtr.Zero;
 
@@ -393,6 +396,67 @@ internal static unsafe class StaffMoves
         }
 
         savedConfig = null;
+    }
+
+    public static void RepairWeaponConfig(RPawnPlayer pawn)
+    {
+        long now = Environment.TickCount64;
+
+        if (now < nextWeaponConfigCheck)
+        {
+            return;
+        }
+
+        nextWeaponConfigCheck = now + WeaponConfigCheckMs;
+
+        AnimSet? batmanCombat = RobinActive ? savedCombat : pawn.AnimationConfig?.CombatAnimset;
+
+        if (batmanCombat == null || !batmanCombat.IsValid || batmanCombat.Name.ToString() == RobinCombatName)
+        {
+            return;
+        }
+
+        int replaced = 0;
+        HashSet<IntPtr> seen = new HashSet<IntPtr>();
+        Stack<RWeaponConfig?> pending = new Stack<RWeaponConfig?>();
+
+        pending.Push(pawn.UnarmedWeaponConfig);
+        pending.Push(pawn.OverrideUnarmedWeaponConfig);
+
+        while (pending.Count > 0)
+        {
+            RWeaponConfig? config = pending.Pop();
+
+            if (config == null || !config.IsValid || !seen.Add(config.Ptr))
+            {
+                continue;
+            }
+
+            TArray<AnimSet> animSets = config.AnimSets;
+
+            for (int index = 0; index < animSets.Count; index++)
+            {
+                AnimSet? set = animSets[index];
+
+                if (set != null && set.IsValid && set.Name.ToString() == RobinCombatName)
+                {
+                    animSets[index] = batmanCombat;
+                    replaced++;
+                }
+            }
+
+            TArray<RWeaponConfig> extends = config.Extends;
+
+            for (int index = 0; index < extends.Count; index++)
+            {
+                pending.Push(extends[index]);
+            }
+        }
+
+        if (replaced > 0)
+        {
+            ModLog.Info("Moves: Batman's weapon config was built while the staff was out; put " + batmanCombat.Name + " back in " + replaced + " slots so his evades have their animations.");
+        }
     }
 
     public static void Heal(RPawnPlayer pawn)
