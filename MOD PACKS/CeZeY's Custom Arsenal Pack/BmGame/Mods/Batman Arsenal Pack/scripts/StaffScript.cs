@@ -269,6 +269,8 @@ public class BatmanRobinStaffScript : Script
             }
 
             case Phase.Out:
+                StaffGuard.Tick(controller, pawn, dt);
+
                 if (!StaffMoves.RobinActive && want)
                 {
                     StaffMoves.Apply(controller, pawn);
