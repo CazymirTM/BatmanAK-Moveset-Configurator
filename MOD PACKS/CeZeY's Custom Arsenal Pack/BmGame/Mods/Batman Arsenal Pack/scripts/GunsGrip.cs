@@ -254,7 +254,6 @@ internal static class GunsGrip
                         control.BoneRotationSpace = SkelControlBase.EBoneControlSpace.BCS_BoneSpace;
                         control.ControlStrength = 0f;
                         control.StrengthTarget = 0f;
-                        control.AddToRoot();
 
                         AnimTree.FSkelControlListHead head = default;
 
