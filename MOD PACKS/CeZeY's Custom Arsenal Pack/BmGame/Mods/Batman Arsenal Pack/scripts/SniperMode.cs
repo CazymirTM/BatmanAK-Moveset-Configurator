@@ -7,6 +7,7 @@ using BmSDK;
 using BmSDK.BmGame;
 using BmSDK.Engine;
 using BmSDK.Framework;
+using BmSDK.GFxUI;
 using Canvas = BmSDK.Engine.Canvas;
 using FLinearColor = BmSDK.GameObject.FLinearColor;
 using GameViewportClient = BmSDK.Engine.GameViewportClient;
@@ -32,6 +33,7 @@ internal static class SniperMode
         keyDown = false;
         switchedThisPress = false;
         swallowRelease = false;
+        labelChanged = true;
     }
 
     public static void Tick(RPlayerController controller)
@@ -86,12 +88,114 @@ internal static class SniperMode
             ModLog.Info("Mode: equipped the " + (toSniper ? "sniper rifle" : "Disruptor") + " (selected=" + ok + ").");
         }
 
+        if (Util.Same(inventory.CurrentGadget, dis) && controller.RadialGadgetSelect is RGFxMovieRadialGadgetSelect corner && corner.IsValid && !corner.bWheelOpen)
+        {
+            int slot = Sniper.WheelIndex(pawn);
+
+            Util.TryCall("ShowCurrentGadget", () => corner.ShowCurrentGadget(slot));
+        }
+
         ModLog.Info("Mode: the Disruptor slot now holds the " + (toSniper ? "sniper rifle" : "Disruptor") + ".");
         ShowSlotToast();
     }
 
     [DllImport("user32.dll")]
     private static extern short GetAsyncKeyState(int virtualKey);
+
+    private const string CornerLabelPath = "GrandLeftParent.LeftParent.GadgetName.NameText.text";
+    private const string SniperLabel = "SNIPER RIFLE";
+    private const string FirePrompt = "Fire Sniper Rifle";
+
+    private static string? labelRoot;
+    private static IntPtr labelMovie = IntPtr.Zero;
+    private static bool labelChanged = true;
+    private static string? disruptorLabel;
+
+    public static void UpdateLabel(RPlayerController controller, bool sniperHeld, string disruptorClass)
+    {
+        if (!sniperHeld && !labelChanged)
+        {
+            return;
+        }
+
+        try
+        {
+            if (controller.RadialGadgetSelect is not RGFxMovieRadialGadgetSelect movie || !movie.IsValid || !FindLabelRoot(movie))
+            {
+                return;
+            }
+
+            string path = labelRoot + CornerLabelPath;
+            string text = movie.GetVariableString(new FString(path)).ToString() ?? "";
+
+            if (sniperHeld)
+            {
+                if (text != SniperLabel)
+                {
+                    movie.SetVariableString(new FString(path), new FString(SniperLabel));
+                }
+
+                labelChanged = true;
+            }
+            else
+            {
+                if (text == SniperLabel)
+                {
+                    disruptorLabel ??= GameObject.Localize(new FString("GadgetSelect"), new FString(disruptorClass), new FString("GFxUI")).ToString() ?? "";
+                    movie.SetVariableString(new FString(path), new FString(disruptorLabel));
+                }
+
+                labelChanged = false;
+            }
+        }
+        catch (Exception exception)
+        {
+            ModLog.Once("label-failed", "Mode: setting the corner label failed: " + Util.Unwrap(exception));
+        }
+    }
+
+    private static bool FindLabelRoot(RGFxMovieRadialGadgetSelect movie)
+    {
+        if (labelRoot != null && labelMovie == movie.Ptr)
+        {
+            return true;
+        }
+
+        foreach (string candidate in new[] { "", "root.", "_root.", "root1." })
+        {
+            GFxObject? found = movie.GetVariableObject(new FString(candidate + "GrandLeftParent"));
+
+            if (found != null && found.IsValid)
+            {
+                labelRoot = candidate;
+                labelMovie = movie.Ptr;
+
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    [Redirect(typeof(RDisruptorSniper), nameof(RDisruptorSniper.GetHelpPrompt))]
+    private static bool GetHelpPromptRedirect(RDisruptorSniper self, RHUDPrompt prompt, bool flag)
+    {
+        try
+        {
+            if (BatmanArsenalPack.Arsenal.Sniper && Installed && Sniper.Selected && self.bAiming && Sniper.InHand(self) && Util.Same(Sniper.Dis(Sniper.Batman()), self))
+            {
+                prompt.AddLine(new FString(FirePrompt), RHUDPrompt.EControlIcon.CI_UseGadget, false, false, false, false);
+
+                return true;
+            }
+        }
+        catch (Exception exception)
+        {
+            ModLog.Once("prompt-failed", "Mode: setting the fire prompt failed: " + Util.Unwrap(exception));
+        }
+
+        return self.GetHelpPrompt(prompt, flag);
+    }
 
     private static bool ReloadKeyDown()
     {

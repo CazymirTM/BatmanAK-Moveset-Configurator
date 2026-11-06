@@ -166,6 +166,8 @@ public class BatmanDeathstrokeSniperScript : Script
 
         bool sniper = Sniper.Selected;
 
+        SniperMode.UpdateLabel(controller, sniper && (pawn.InvManager as RInventoryManager)?.CurrentGadget is RDisruptorSniper, Util.ClassName(dis));
+
         if (lastSniper && !sniper)
         {
             SniperAmmo.RestoreDisruptor(dis, pawn);
@@ -255,6 +257,11 @@ public class BatmanDeathstrokeSniperScript : Script
 
                 if (dis != null)
                 {
+                    if (Game.GetPlayerController(0) is RPlayerController controller)
+                    {
+                        SniperMode.UpdateLabel(controller, false, Util.ClassName(dis));
+                    }
+
                     SniperAmmo.RestoreDisruptor(dis, pawn);
                     SniperProps.Deactivate(pawn, dis);
                 }
