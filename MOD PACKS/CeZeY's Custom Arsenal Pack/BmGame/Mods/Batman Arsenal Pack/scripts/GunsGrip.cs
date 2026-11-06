@@ -28,6 +28,8 @@ internal static class GunsGrip
 
     private const float BlendTime = 0.15f;
 
+    public static bool StaffHand;
+
     private static readonly string[] Fingers = { "1", "2", "3", "4" };
     private static readonly string[] Joints = { "", "1", "2" };
     private static readonly string[] Sides = { "L", "R" };
@@ -67,7 +69,7 @@ internal static class GunsGrip
 
         try
         {
-            if (!pistolsInHand && joints.Count == 0)
+            if (!pistolsInHand && !StaffHand && joints.Count == 0)
             {
                 return;
             }
@@ -86,7 +88,7 @@ internal static class GunsGrip
 
                 if (!pistolsInHand)
                 {
-                    target = 0f;
+                    target = StaffHand && joint.Side == "R" ? (joint.Index == 2 ? TipShare * MiddleApplied(joint) : Adaptive(body, joint)) : 0f;
                 }
                 else if (gunsHeld)
                 {

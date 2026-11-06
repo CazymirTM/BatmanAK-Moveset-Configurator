@@ -207,7 +207,6 @@ internal static class SniperProps
                     return;
                 }
 
-                // The Arkham Knight's rifle only ships inside two story levels; this cinematic package is the small one (24 MB, loads in ~0.15 s).
                 Package? p = Game.LoadPackage(ArkhamPackage);
 
                 ModLog.Info("Props: LoadPackage(" + ArkhamPackage + ") -> " + (p != null && p.IsValid ? "loaded" : "null") + ".");

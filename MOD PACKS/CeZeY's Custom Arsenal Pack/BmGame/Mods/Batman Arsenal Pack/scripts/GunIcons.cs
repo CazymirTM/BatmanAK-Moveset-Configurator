@@ -14,6 +14,8 @@ internal static class GunIcons
     private const string BatmanIcons = "Icons_BM";
     private const string ClipName = "RedHoodGunsIcon";
     private const string CurrentGadgetPath = "GrandLeftParent.LeftParent.CurrentGadget.Instance";
+    private const string CornerLabelPath = "GrandLeftParent.LeftParent.GadgetName.NameText.text";
+    private const string GunsLabel = "DUAL HANDGUNS";
 
     private static string? root;
     private static IntPtr rootMovie = IntPtr.Zero;
@@ -41,7 +43,14 @@ internal static class GunIcons
             bool guns = GunsMode.GunsSelected;
 
             Show(movie, SlotPath(slot), guns);
-            Show(movie, CurrentGadgetPath, guns && Guns.HeldBy(out _, out _));
+            if (!BatmanRobinStaff.StaffIcons.OwnsCurrentIcon)
+            {
+                Show(movie, CurrentGadgetPath, guns && Guns.HeldBy(out _, out _));
+            }
+            else
+            {
+                Find(movie, CurrentGadgetPath + "." + ClipName)?.SetVisible(false);
+            }
 
             if (guns)
             {
@@ -77,6 +86,18 @@ internal static class GunIcons
 
     public static void Tick(RPlayerController controller, int slot)
     {
+        if (root != null && GunsMode.GunsSelected && controller.RadialGadgetSelect is RGFxMovieRadialGadgetSelect corner && corner.Ptr == rootMovie && Guns.HeldBy(out _, out _))
+        {
+            corner.SetVariableBool(new FString(root + CurrentGadgetPath + "." + BatmanIcons + ".visible"), false);
+
+            string label = root + CornerLabelPath;
+
+            if ((corner.GetVariableString(new FString(label)).ToString() ?? "") != GunsLabel)
+            {
+                corner.SetVariableString(new FString(label), new FString(GunsLabel));
+            }
+        }
+
         DateTime now = DateTime.UtcNow;
 
         if (now < nextCheck && AmmoField() == lastAmmoField)

@@ -233,7 +233,7 @@ internal static class SniperLink
     {
         try
         {
-            return AppDomain.CurrentDomain.GetData(InHandKey) as string == "1";
+            return AppDomain.CurrentDomain.GetData(InHandKey) as string == "1" || AppDomain.CurrentDomain.GetData("BatmanStaff.InHand") as string == "1";
         }
         catch
         {

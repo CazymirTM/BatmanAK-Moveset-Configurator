@@ -9,7 +9,6 @@ using BmSDK.Framework;
 
 namespace BatmanDeathstrokeSniper;
 
-// Red laser sight while the sniper rifle is aimed: the militia snipers' own laser (RBMWeaponSniper's "Sight" component template).
 internal static class SniperLaser
 {
     private static ParticleSystem? ps;
@@ -18,8 +17,6 @@ internal static class SniperLaser
     private static bool on;
     private static float shownSince = -1f;
 
-    // minimum time after the aim starts, and how well the barrel must point at the aim point (on below ~32 deg, off past 60 deg),
-    // so the laser doesn't sweep around while the draw animation swings the rifle off Batman's back
     private const float DrawDelay = 0.15f;
     private const float AlignCos = 0.85f, KeepCos = 0.5f;
     private static float lastCos;
@@ -46,7 +43,6 @@ internal static class SniperLaser
         return ps;
     }
 
-    // Aimed = the gadget's own aim flag + "Primed" (GadgetState stays "in hand" through the draw and holster animations).
     public static bool Aimed(RDisruptorSniper dis) => dis.bAiming && dis.GetStateName().ToString() == "Primed";
 
     public static void Tick(RPlayerController pc, RPawnPlayer pawn, RDisruptorSniper dis, bool show)
@@ -167,7 +163,6 @@ internal static class SniperLaser
         }
     }
 
-    // The rifle's root bone X axis runs along the barrel (stock -> muzzle) for the Arkham Knight's and the militia rifle.
     private static Vector3 Barrel(RDisruptorSniper dis)
     {
         try
@@ -211,7 +206,6 @@ internal static class SniperLaser
         }
     }
 
-    // Pawn gone (level change, death, menu): only forget the actor, never touch it (see the crash rule in the guns mod notes).
     public static void Reset()
     {
         em = null;
@@ -219,7 +213,6 @@ internal static class SniperLaser
         shownSince = -1f;
     }
 
-    // Script unload while Batman still exists: remove the emitter so a hot reload doesn't leave a laser behind.
     public static void Destroy()
     {
         try

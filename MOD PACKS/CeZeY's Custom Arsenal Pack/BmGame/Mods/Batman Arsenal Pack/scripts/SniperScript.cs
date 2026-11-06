@@ -237,8 +237,6 @@ public class BatmanDeathstrokeSniperScript : Script
         }
     }
 
-    // Switched off in the Arsenal Pack menu: the Disruptor gets its model, charges and filter back, the back rifle
-    // and the laser go away. Switching back on reinstalls through the normal pawn tracking.
     private void Deactivate()
     {
         if (trackedPawn == IntPtr.Zero && !installed)

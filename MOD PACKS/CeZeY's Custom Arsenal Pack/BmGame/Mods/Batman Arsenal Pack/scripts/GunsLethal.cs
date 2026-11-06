@@ -176,15 +176,19 @@ internal static class GunsLethal
     }
 
     private const int StateUnknown = 10;
+    private const int StateUnconscious = 3;
     private const float ScreenAspect = 16f / 9f;
-    private const float MatchDistance = 0.08f;
+
+    private const float BodyMatchDistance = 0.22f;
 
     private static string? deceasedText;
     private static string labelPath = "";
     private static string originalLabel = "";
     private static int nextClipScan = 0;
     private static bool shownDead;
-    private static DateTime nextFindAllowed = DateTime.MinValue;
+
+    private const int LastClip = 2000000;
+    private const long ScanTicksPerFrame = TimeSpan.TicksPerMillisecond * 4;
     private static IntPtr lastScanned = IntPtr.Zero;
     private static bool DebugScan = false;
 
@@ -201,7 +205,7 @@ internal static class GunsLethal
 
         try
         {
-            dead = killedList.Count > 0 && ScannedVillainIsKilled(locationX, locationY);
+            dead = killedList.Count > 0 && ScannedVillainIsKilled(locationX, locationY, physicalState);
         }
         catch (Exception exception)
         {
@@ -216,6 +220,10 @@ internal static class GunsLethal
             {
                 ShowDeceased(self);
             }
+            else if (killedList.Count > 0 && labelPath.Length == 0 && self.ModularHudMovie is GFxMoviePlayer scanning && scanning.IsValid)
+            {
+                FindLabel(scanning, AttachPath(self));
+            }
             else if (shownDead)
             {
                 RestoreLabel(self);
@@ -227,11 +235,11 @@ internal static class GunsLethal
         }
     }
 
-    private static bool ScannedVillainIsKilled(float x, float y)
+    private static bool ScannedVillainIsKilled(float x, float y, int physicalState)
     {
         RPlayerController? controller = Game.GetPlayerController(0);
 
-        if (controller == null)
+        if (controller == null || physicalState != StateUnconscious)
         {
             return false;
         }
@@ -256,7 +264,7 @@ internal static class GunsLethal
             up = -up;
         }
 
-        float best = MatchDistance;
+        float best = BodyMatchDistance;
         RPawnVillain? match = null;
 
         foreach (RPawnVillain villain in Game.FindObjects<RPawnVillain>())
@@ -291,6 +299,16 @@ internal static class GunsLethal
             float sy = -Vector3.Dot(d, up) / ahead / tanY * 0.5f;
             float dist = MathF.Sqrt((sx - x) * (sx - x) + (sy - y) * (sy - y));
 
+            if (IsStanding(villain))
+            {
+                if (killed.Remove(villain.Ptr))
+                {
+                    killedList.RemoveAll(v => !v.IsValid || v.Ptr == villain.Ptr);
+                }
+
+                continue;
+            }
+
             if (dist < best)
             {
                 best = dist;
@@ -299,15 +317,40 @@ internal static class GunsLethal
         }
 
         bool dead = match != null && IsKilled(match);
+
         IntPtr matched = match?.Ptr ?? IntPtr.Zero;
 
         if (DebugScan && matched != lastScanned)
         {
             lastScanned = matched;
-            ModLog.Info("Lethal: scanning " + (match != null ? Util.ClassName(match) + " " + match.Ptr.ToString("X") : "nobody") + " at " + x.ToString("0.000") + "," + y.ToString("0.000") + " (off " + best.ToString("0.000") + "), killed by the guns: " + dead + ".");
+            ModLog.Info("Lethal: scanning " + (match != null ? Util.ClassName(match) + " " + match.Ptr.ToString("X") : "nobody") + " at " + x.ToString("0.000") + "," + y.ToString("0.000") + " (off " + best.ToString("0.000") + "), state " + physicalState + ", killed by the guns: " + dead + ".");
         }
 
         return dead;
+    }
+
+    private static bool IsStanding(RPawnVillain villain)
+    {
+        try
+        {
+            return villain.Health > 0 && !villain.bDiedAlready && villain.IsAliveAndWell();
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static string UnconsciousText()
+    {
+        try
+        {
+            return GameObject.Localize(new FString("Detective"), new FString("Unconscious"), new FString("GFxUI")).ToString() ?? "";
+        }
+        catch
+        {
+            return "";
+        }
     }
 
     private static string DeceasedText()
@@ -372,30 +415,26 @@ internal static class GunsLethal
                 return;
             }
 
-            if (current.Length > 0 && current == originalLabel)
+            if (current.Length > 0)
             {
                 movie.SetVariableString(new FString(labelPath), new FString(text));
                 shownDead = true;
 
                 return;
             }
-        }
 
-        if (DateTime.UtcNow < nextFindAllowed)
-        {
-            return;
+            labelPath = "";
+            nextClipScan = 0;
         }
 
         if (!FindLabel(movie, AttachPath(module)))
         {
-            nextFindAllowed = DateTime.UtcNow + TimeSpan.FromSeconds(0.5);
-
             return;
         }
 
         movie.SetVariableString(new FString(labelPath), new FString(text));
         shownDead = true;
-        ModLog.Once("deceased-shown", "Lethal: Detective Mode shows '" + text + "' for thugs the guns killed.");
+        ModLog.Once("deceased-shown", "Lethal: Detective Mode shows '" + text + "' for thugs the guns killed (label in " + labelPath + ").");
     }
 
     private static void RestoreLabel(RHudModuleDetectiveMode module)
@@ -404,9 +443,14 @@ internal static class GunsLethal
 
         GFxMoviePlayer? movie = module.ModularHudMovie;
 
-        if (movie == null || !movie.IsValid || labelPath.Length == 0 || originalLabel.Length == 0)
+        if (movie == null || !movie.IsValid || labelPath.Length == 0)
         {
             return;
+        }
+
+        if (originalLabel.Length == 0)
+        {
+            originalLabel = UnconsciousText();
         }
 
         if (Get(movie, labelPath) == DeceasedText())
@@ -417,13 +461,16 @@ internal static class GunsLethal
 
     private static bool FindLabel(GFxMoviePlayer movie, string attach)
     {
-        for (int pass = 0; pass < 2; pass++)
-        {
-            int start = pass == 0 ? nextClipScan : 0;
-            int end = pass == 0 ? nextClipScan + 4000 : nextClipScan;
+        long started = System.Diagnostics.Stopwatch.GetTimestamp();
 
-            for (int i = start; i < end; i++)
+        while (TimeSpan.FromSeconds((System.Diagnostics.Stopwatch.GetTimestamp() - started) / (double)System.Diagnostics.Stopwatch.Frequency).Ticks < ScanTicksPerFrame)
+        {
+            for (int step = 0; step < 16; step++)
             {
+                int i = nextClipScan;
+
+                nextClipScan = i >= LastClip ? 0 : i + 1;
+
                 string clip = attach + ".instance" + i;
 
                 if (Get(movie, clip + ".Text.text").Length == 0)
@@ -440,7 +487,11 @@ internal static class GunsLethal
                     {
                         nextClipScan = i;
                         labelPath = label;
-                        originalLabel = value == DeceasedText() ? originalLabel : value;
+
+                        if (value != DeceasedText() && !value.Contains('?'))
+                        {
+                            originalLabel = value;
+                        }
 
                         return true;
                     }

@@ -173,8 +173,6 @@ public class BatmanRedHoodGunsScript : Script
         }
     }
 
-    // Switched off in the Arsenal Pack menu: give the slot back to the REC gun, put the pistols away and stop.
-    // Switching back on simply reinstalls (the tracking reset makes the next tick start over).
     private void Deactivate()
     {
         if (trackedPawn == IntPtr.Zero && !installed)

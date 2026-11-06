@@ -3,13 +3,11 @@ using BmSDK.BmGame;
 using BmSDK.Engine;
 using BmSDK.Framework;
 
-
 [Script]
 public class BatmanHoodCustomArmed : Script
 {
     private static BatmanHoodCustomArmed _instance;
 
-    
     private const string CONSOLE_EXEC_COMMAND = "exec Console.txt";
 
     private const string BOOTSTRAP_PACKAGE = "Playable_DLCRedHood_SF";
@@ -19,7 +17,6 @@ public class BatmanHoodCustomArmed : Script
     private const string BATMAN_PACKAGE = "Playable_Batman_Std_SF";
     private const string BATMAN_CLASS = "Playable_Batman";
     private const string BATMAN_NAME = "Batman";
-
 
     private static readonly string[] BootstrapPackagesToRootAfterSwitch =
     {
@@ -73,7 +70,6 @@ public class BatmanHoodCustomArmed : Script
         "Playable_Batman_Beyond"
     };
 
-
     private enum InitState
     {
         WaitingForBatman,
@@ -113,6 +109,22 @@ public class BatmanHoodCustomArmed : Script
         Log("Bootstrap character: " + BOOTSTRAP_NAME + " (" + BOOTSTRAP_CLASS + ")");
         Log("No manual challenge-map injecting is required. Everything below is automatic.");
         _state = InitState.WaitingForBatman;
+    }
+
+    public override void OnLoad()
+    {
+        _instance = this;
+        InitLog();
+        _bootstrapDone = true;
+        _bootstrapStartedThisSession = true;
+        _playersPreloaded = true;
+        _consolePrimedDuringBootstrap = true;
+
+        RPawnPlayerBmBase batman = TryGetBatman();
+
+        _lastAppliedBatmanPtr = IsUsableBatman(batman) ? batman.Ptr : 0;
+        _state = InitState.Ready;
+        Log("BatmanHoodCustomArmed reloaded with the pack. Bootstrap not repeated.");
     }
 
     public override void OnEnterGame()

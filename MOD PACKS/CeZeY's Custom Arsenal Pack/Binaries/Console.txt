@@ -71,19 +71,19 @@ set R3rdPersonCamera GlidingCameraOffset (X=-185.0,Y=20.0,Z=30.0)
 
 
 ENEMIES:
-set BmGame.RPawnCombat bLastTarget 1
-set BmGame.RPawnCombat bQuickKOIfLastEnemy 1
+set BmGame.RPawnCombat bLastTarget 0
+set BmGame.RPawnCombat bQuickKOIfLastEnemy 0
 set BmGame.RPawnCombat bKnockbackAttackingThugs 1
 set BmGame.RCombatMove_BatmanCounter bShouldKill 0
 set BmGame.RRiotBrain bRiotWantsToFight 1
 set BmGame.RBMWeapon DropOnFirstHit 0
-Set RBMCombatManager PawnHealthMultiplier 1.3 ( LIFE OF THUGS (0.3) YOU CAN KILL WITH ONE SHOT OF EXPLOSIVE GEL. DEFAULT: (1.0) )
+Set RBMCombatManager PawnHealthMultiplier 3.0 ( LIFE OF THUGS (0.3) YOU CAN KILL WITH ONE SHOT OF EXPLOSIVE GEL. DEFAULT: (1.0) )
 Set BmGame.RPopulationManager bForceRiots 1
 
 
 CHEATS:
 Set BmGame.RPawnPlayer bSilentRunning 0
-Set BmGame.RPersistentDebugData Debug_Combat_CanAlwaysTakedown 1
+Set BmGame.RPersistentDebugData Debug_Combat_CanAlwaysTakedown 0
 =Set BmGame.RPersistentDebugData Debug_Combat_CanAlwaysDualPlay 0
 Set BmGame.RPersistentDebugData Debug_Player_ForceSilentCombatTakedowns true
 Set BmGame.RPersistentDebugData Debug_Combat_ForceEnvironmentUse true
@@ -149,7 +149,7 @@ set RPawnCombat bForceHeavyCounter true
 set RPawnPlayerCombat bForceHeavyCounter true
 set RPawnPlayerConfig bForceHeavyCounter true
 set BmGame.RInventoryGadget bUsableFromVantagePoints true
-set BmGame.RPawnPlayerCombat bIncreasedCombatPower true
+set BmGame.RPawnPlayerCombat bIncreasedCombatPower false
 set BmGame.RPawnPlayerCombat bForceHeavyCounter true
 set BmGame.RPawnPlayerConfig bForceHeavyCounter true
 

@@ -147,7 +147,6 @@ internal static class GunsWheel
         }
     }
 
-    // Arsenal Pack menu "GUNS ACTIVE = NO": the REC gun gets its slot back whatever the guns/REC selection is.
     public static void Deactivate(RPlayerController controller, RInventoryManager inventory)
     {
         RInventoryGadget? gun = Guns.Gun;
@@ -494,6 +493,11 @@ internal static class GunsWheel
         for (int index = 0; index < Math.Min(maxSlots, entries.Length); index++)
         {
             string className = entries[index].Split('|')[0];
+
+            if (className == BatmanRobinStaff.StaffMode.DisplayClass)
+            {
+                className = BatmanRobinStaff.Staff.FreezeClass;
+            }
 
             slotClasses.Add(className);
 
