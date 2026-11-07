@@ -60,6 +60,18 @@ internal static class StaffGuard
         return true;
     }
 
+    [Redirect(typeof(RPlayerControllerCombat), nameof(RPlayerControllerCombat.ReadyGadgetOrCounterPressed))]
+    private static void CounterPressedRedirect(RPlayerControllerCombat self)
+    {
+        if (StaffMoves.RobinActive && self.Pawn is RPawnPlayer pawn && pawn.CombatMove is RCombatMove_BatmanStrike strike && !strike.bCanStartNextNonStrikeMove)
+        {
+            strike.bCanStartNextNonStrikeMove = true;
+            ModLog.Once("counter-window", "Counters: opened the counter window early on a strike with Robin's moves.");
+        }
+
+        self.ReadyGadgetOrCounterPressed();
+    }
+
     public static void Track(RPawnPlayer pawn)
     {
         if (pawn.CombatMove is not RCombatMove_BatmanCounter counter)

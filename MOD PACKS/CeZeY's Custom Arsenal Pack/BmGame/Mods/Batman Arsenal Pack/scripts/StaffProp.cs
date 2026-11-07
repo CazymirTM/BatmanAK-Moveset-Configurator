@@ -13,6 +13,8 @@ namespace BatmanRobinStaff;
 internal static class StaffProp
 {
     private const string Package = "Playable_Robin0_SF";
+    private const string HarleyPackage = "Playable_DLCHarleyQuinn_SF";
+    private const string HarleyStrikeSet = "DLC0_Anim_Harley_Combat.Code.HQ_Attack";
     private const string MeshPath = "Robin.Mesh.Robin_Staff_V2_Right";
     private const string MovementSet = "Anim_Robin_Movement.Code.RB_Movement";
     private const string PutAwayName = "Combat_Stand_Idle_PutAway_02";
@@ -61,6 +63,16 @@ internal static class StaffProp
         catch (Exception exception)
         {
             ModLog.Warn("Props: loading Robin's package failed: " + Util.Unwrap(exception));
+        }
+
+        try
+        {
+            Game.LoadPackage(HarleyPackage);
+            Game.FindObject<AnimSet>(HarleyStrikeSet)?.AddToRoot();
+        }
+        catch (Exception exception)
+        {
+            ModLog.Warn("Props: loading Harley's package failed: " + Util.Unwrap(exception));
         }
 
         mesh = Game.FindObject<SkeletalMesh>(MeshPath);
