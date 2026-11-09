@@ -289,7 +289,7 @@ internal static class GunsAim
             {
                 string bone = attachments[index].BoneName.ToString();
 
-                if (attachments[index].Component is SkeletalMeshComponent prop && prop.IsValid && prop.SkeletalMesh != null && prop.SkeletalMesh.Name.ToString() == "RH_GUN" &&
+                if (attachments[index].Component is SkeletalMeshComponent prop && prop.IsValid && GunsModel.IsPistolMesh(prop.SkeletalMesh) &&
                     Array.IndexOf(PropBones, bone) >= 0 && !Same(prop, Guns.Gun?.Mesh) && !Same(prop, Guns.Gun?.Mesh2) &&
                     !Same(prop, pistolRight) && !Same(prop, pistolLeft) && !Same(prop, holsterRight) && !Same(prop, holsterLeft))
                 {
@@ -346,7 +346,7 @@ internal static class GunsAim
         try
         {
             SkeletalMeshComponent? body = pawn.Mesh;
-            SkeletalMesh? pistolMesh = gun.Mesh?.SkeletalMesh ?? Game.FindObject<SkeletalMesh>("DLC0_Redhood_Gun.Mesh.RH_GUN");
+            SkeletalMesh? pistolMesh = GunsModel.Pick(gun.Mesh?.SkeletalMesh ?? Game.FindObject<SkeletalMesh>("DLC0_Redhood_Gun.Mesh.RH_GUN"));
 
             if (body == null || !body.IsValid || pistolMesh == null || !pistolMesh.IsValid)
             {
@@ -392,7 +392,7 @@ internal static class GunsAim
         try
         {
             SkeletalMeshComponent? body = pawn.Mesh;
-            SkeletalMesh? pistolMesh = gun.Mesh?.SkeletalMesh ?? Game.FindObject<SkeletalMesh>("DLC0_Redhood_Gun.Mesh.RH_GUN");
+            SkeletalMesh? pistolMesh = GunsModel.Pick(gun.Mesh?.SkeletalMesh ?? Game.FindObject<SkeletalMesh>("DLC0_Redhood_Gun.Mesh.RH_GUN"));
 
             if (body == null || !body.IsValid || pistolMesh == null || !pistolMesh.IsValid)
             {

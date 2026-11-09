@@ -100,6 +100,7 @@ public class BatmanRedHoodGunsScript : Script
     private void Update()
     {
         GunsConfig.Tick();
+        GunsModel.Tick();
 
         if (!BatmanArsenalPack.Arsenal.Guns)
         {
@@ -161,6 +162,8 @@ public class BatmanRedHoodGunsScript : Script
         }
 
         GunsAim.Tick(pawn);
+        GunsColor.Tick(pawn);
+        GunsModel.ApplyScale(pawn);
         GunIcons.Tick(controller, GunsWheel.SharedSlotIndex);
         GunsWheel.Tick(controller);
         GunsMode.Tick(controller);
@@ -212,6 +215,7 @@ public class BatmanRedHoodGunsScript : Script
         Guns.Gun = null;
 
         GunsAnims.Reset();
+        GunsColor.Forget();
         GunsAim.Reset();
         GunsHud.Reset();
         GunIcons.Reset();

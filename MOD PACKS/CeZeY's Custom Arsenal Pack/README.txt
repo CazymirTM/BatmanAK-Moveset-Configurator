@@ -12,6 +12,15 @@ RED HOOD'S DUAL HANDGUNS  (key 4, shares the REC gun's slot)
 - 12-round clip with an ammo counter, R to reload, quickfire by double-tapping 4.
 - Pistols in thigh holsters; F5 keeps them in Batman's hands at all times.
 
+MECH DEAGLE  (the guns' default model since 1.7.0)
+- The pistols are a Mech Deagle model by default: in Batman's hands, in the thigh
+  holsters and during quickfire. Pause menu > MODS > Batman Arsenal Pack > GUNS
+  (or BatmanGuns.ini) switches back to Red Hood's own pistols.
+- GUNS also has GUN PAINT (paint the pistols in a colour: gold, red, crimson, black,
+  white, silver, blue, green, purple, pink or your own gun_rgb) and GUN SIZE.
+- The model lives in BmGame\CookedPCConsole\BatmanArsenalGun_SF.upk. Without that
+  file the pack simply uses Red Hood's pistols.
+
 THE ARKHAM KNIGHT'S SNIPER RIFLE  (key 7, shares the Disruptor's slot)
 - The actual rifle the Arkham Knight uses in his boss fight, in Batman's hands
   and slung across his back.
@@ -71,3 +80,10 @@ Robin's staff and its moveset swap, and the merged injector, are made by me (CeZ
   without those hasn't been tested.
 - Optional: "Arkham Mod Menu" (https://www.nexusmods.com/batmanarkhamknight/mods/3635) to
   switch parts of the pack on and off from the pause menu. Not needed otherwise but very recommended.
+
+The Mech Deagle model is "Mech Deagle" by Long Nguyễn (https://sketchfab.com/LongNguyen89),
+https://sketchfab.com/3d-models/mech-deagle-bd7c187115b2408ca4e91e3b2ea94e97
+licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). Changes made: converted
+into an Arkham Knight package (built on a copy of the game's cop-arms package), turned, scaled and
+rigged to fit Batman's hands, textures re-encoded and a material mask made from its own maps. The
+in-game paint colours are applied by the pack at runtime.

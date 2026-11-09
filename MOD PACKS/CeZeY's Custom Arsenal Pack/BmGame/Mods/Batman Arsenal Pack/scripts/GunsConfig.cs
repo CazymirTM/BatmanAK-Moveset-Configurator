@@ -58,6 +58,14 @@ internal static class GunsConfig
         public ushort PadReload = GunsPad.X;
         public bool PadReloadNeedsAim = true;
         public float PadAimSens = 0.75f;
+
+        public bool GunColor = true;
+        public byte ColorR = 200;
+        public byte ColorG = 35;
+        public byte ColorB = 35;
+
+        public bool CustomModel = true;
+        public float CustomScale = 1.3f;
     }
 
     public const string FileName = "BatmanGuns.ini";
@@ -107,6 +115,34 @@ internal static class GunsConfig
         Save("selected", guns ? "guns" : "rec");
     }
 
+    public static bool Loaded => path.Length > 0 && stamp != default;
+
+    public static void SetGunColor(bool on)
+    {
+        C.GunColor = on;
+        Save("gun_color", on ? "1" : "0");
+    }
+
+    public static void SetGunRgb(byte r, byte g, byte b)
+    {
+        C.ColorR = r;
+        C.ColorG = g;
+        C.ColorB = b;
+        Save("gun_rgb", r + "," + g + "," + b);
+    }
+
+    public static void SetCustomScale(float scale)
+    {
+        C.CustomScale = Math.Clamp(scale, 0.5f, 3f);
+        Save("custom_scale", F(C.CustomScale));
+    }
+
+    public static void SetCustomModel(bool custom)
+    {
+        C.CustomModel = custom;
+        Save("gun_model", custom ? "custom" : "redhood");
+    }
+
     public static void SetAlwaysInHands(bool on)
     {
         C.AlwaysInHands = on;
@@ -145,15 +181,22 @@ internal static class GunsConfig
 
     private static void AddMissingSections()
     {
+        AddSection("[gamepad]", GamepadSection(new Settings()));
+        AddSection("[color]", ColorSection(new Settings()));
+        AddSection("[model]", ModelSection(new Settings()));
+    }
+
+    private static void AddSection(string header, string section)
+    {
         string text = File.ReadAllText(path);
 
-        if (text.IndexOf("[gamepad]", StringComparison.OrdinalIgnoreCase) >= 0)
+        if (text.IndexOf(header, StringComparison.OrdinalIgnoreCase) >= 0)
         {
             return;
         }
 
-        File.AppendAllText(path, (text.EndsWith("\n") ? "" : "\n") + GamepadSection(new Settings()), new UTF8Encoding(false));
-        ModLog.Info("Config: added the [gamepad] section to " + path + ".");
+        File.AppendAllText(path, (text.EndsWith("\n") ? "" : "\n") + section, new UTF8Encoding(false));
+        ModLog.Info("Config: added the " + header + " section to " + path + ".");
     }
 
     private static string ImportDeadZoneAim(Settings settings)
@@ -228,6 +271,27 @@ internal static class GunsConfig
                 continue;
             }
 
+            if (pair.Key == "gun_model")
+            {
+                s.CustomModel = pair.Value.Equals("custom", StringComparison.OrdinalIgnoreCase);
+
+                continue;
+            }
+
+            if (pair.Key == "gun_rgb")
+            {
+                string[] parts = pair.Value.Split(',');
+
+                if (parts.Length == 3 && byte.TryParse(parts[0].Trim(), out byte r) && byte.TryParse(parts[1].Trim(), out byte g) && byte.TryParse(parts[2].Trim(), out byte b))
+                {
+                    s.ColorR = r;
+                    s.ColorG = g;
+                    s.ColorB = b;
+                }
+
+                continue;
+            }
+
             if (pair.Key is "pad_switch" or "pad_hands" or "pad_reload")
             {
                 if (GunsPad.TryParseButton(pair.Value, out ushort mask))
@@ -286,6 +350,8 @@ internal static class GunsConfig
                 case "pad": s.PadEnabled = on; break;
                 case "pad_reload_needs_aim": s.PadReloadNeedsAim = on; break;
                 case "pad_aim_sens": s.PadAimSens = f; break;
+                case "gun_color": s.GunColor = on; break;
+                case "custom_scale": s.CustomScale = Math.Clamp(f, 0.5f, 3f); break;
             }
         }
 
@@ -405,7 +471,26 @@ recoil_punch_stiffness={F(s.PunchStiffness)}
 recoil_punch_damping={F(s.PunchDamping)}
 recoil_punch_roll={F(s.PunchRoll)}
 recoil_punch_fov={F(s.PunchFov)}
-" + GamepadSection(s);
+" + GamepadSection(s) + ColorSection(s) + ModelSection(s);
+
+    private static string ModelSection(Settings s) =>
+$@"
+[model]
+; Which pistol model Batman uses: redhood = Red Hood's pistols, custom = the Mech Deagle by Long Nguyen (Sketchfab, CC BY 4.0)
+; from BmGame\CookedPCConsole\BatmanArsenalGun_SF.upk (Red Hood's pistols are used when that package is not installed)
+gun_model={(s.CustomModel ? "custom" : "redhood")}
+; Size of the Mech Deagle, in hand and in the holsters (1 = the size it was converted at, 1.3 = 30% bigger)
+custom_scale={F(s.CustomScale)}
+";
+
+    private static string ColorSection(Settings s) =>
+$@"
+[color]
+; 1 = paint Batman's pistols (in hand and in the thigh holsters) in the colour below, 0 = the model's own colours
+gun_color={B(s.GunColor)}
+; Paint colour as red,green,blue from 0 to 255
+gun_rgb={s.ColorR},{s.ColorG},{s.ColorB}
+";
 
     private static string GamepadSection(Settings s) =>
 $@"
