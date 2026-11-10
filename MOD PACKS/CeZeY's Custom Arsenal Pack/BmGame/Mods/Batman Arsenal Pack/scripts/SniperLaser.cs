@@ -174,6 +174,11 @@ internal static class SniperLaser
                 return Vector3.Zero;
             }
 
+            if (SniperProps.IsCustom(m.SkeletalMesh))
+            {
+                return SniperProps.CustomBarrel(m);
+            }
+
             Vector3 x = m.GetBoneAxis(m.GetBoneName(0), GameObject.EAxis.AXIS_X);
 
             return x == Vector3.Zero ? x : Vector3.Normalize(x);

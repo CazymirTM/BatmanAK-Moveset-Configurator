@@ -183,6 +183,7 @@ internal static class GunsMode
 
         try
         {
+            GunIcons.UpdateWheelTitle();
             GunsPad.Frame();
             GunsPad.DrawWheelHint(canvas);
         }

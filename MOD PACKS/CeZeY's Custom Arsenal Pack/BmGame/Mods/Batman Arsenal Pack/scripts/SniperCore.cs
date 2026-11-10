@@ -170,8 +170,13 @@ internal static class SniperConfig
         public bool SniperSelected;
         public float SwitchHold = 1.0f;
 
-        public string RifleModel = "arkham";
+        public string RifleModel = "custom";
         public bool ArkhamRifle => RifleModel == "arkham";
+        public bool CustomRifle => RifleModel == "custom";
+        public float CustomScale = 1f;
+        public bool RifleColor;
+        public byte ColorR = 200, ColorG = 35, ColorB = 35;
+        public string RifleCamo = "gold";
         public int Laser = 1;
         public float LaserScale = 1f;
         public bool LaserSound = true;
@@ -204,6 +209,10 @@ internal static class SniperConfig
         public Rotator AkBackRot = new Rotator(203.978f, -12.623f, 199.973f);
         public Vector3 AkHandOffset = new Vector3(-14f, 2f, -5f);
         public Rotator AkHandRot = new Rotator(0f, 0f, 0f);
+        public Vector3 CuBackOffset = new Vector3(23.731f, 20.892f, 4.0f);
+        public Rotator CuBackRot = new Rotator(203.978f, -12.623f, 199.973f);
+        public Vector3 CuHandOffset = new Vector3(-14f, 2f, -5f);
+        public Rotator CuHandRot = new Rotator(0f, 0f, 0f);
 
         public float MuzzleScale = 2f;
         public int Trail = 5;
@@ -254,6 +263,42 @@ internal static class SniperConfig
         {
         }
     }
+
+    public static bool Loaded => path.Length > 0;
+
+    public static void SetRifleModel(string model)
+    {
+        C.RifleModel = model == "custom" ? "custom" : "arkham";
+        Save();
+    }
+
+    public static void SetCustomScale(float scale)
+    {
+        C.CustomScale = Math.Clamp(scale, 0.3f, 3f);
+        Save();
+    }
+
+    public static void SetRifleColor(bool on)
+    {
+        C.RifleColor = on;
+        Save();
+    }
+
+    public static void SetRifleRgb(byte r, byte g, byte b)
+    {
+        C.ColorR = r;
+        C.ColorG = g;
+        C.ColorB = b;
+        Save();
+    }
+
+    public static void SetRifleCamo(string camo)
+    {
+        C.RifleCamo = NormCamo(camo);
+        Save();
+    }
+
+    public static string NormCamo(string v) => v.Equals("colored", StringComparison.OrdinalIgnoreCase) ? "colored" : v.Equals("off", StringComparison.OrdinalIgnoreCase) ? "off" : "gold";
 
     public static void SetSniperSelected(bool on)
     {
@@ -316,7 +361,19 @@ internal static class SniperConfig
                 {
                     case "selected": c.SniperSelected = v.Equals("sniper", StringComparison.OrdinalIgnoreCase); break;
                     case "switch_hold": c.SwitchHold = Math.Clamp(Float(v, 1f), 0.3f, 5f); break;
-                    case "rifle_model": c.RifleModel = v.Equals("thug", StringComparison.OrdinalIgnoreCase) ? "thug" : "arkham"; break;
+                    case "rifle_model": c.RifleModel = v.Equals("custom", StringComparison.OrdinalIgnoreCase) ? "custom" : "arkham"; break;
+                    case "custom_scale": c.CustomScale = Math.Clamp(Float(v, 1f), 0.3f, 3f); break;
+                    case "rifle_color": c.RifleColor = Bool(v); break;
+                    case "rifle_camo": c.RifleCamo = NormCamo(v); break;
+                    case "rifle_rgb":
+                        {
+                            Vector3 rgb = Vec(v, new Vector3(c.ColorR, c.ColorG, c.ColorB));
+
+                            c.ColorR = (byte)Math.Clamp(rgb.X, 0f, 255f);
+                            c.ColorG = (byte)Math.Clamp(rgb.Y, 0f, 255f);
+                            c.ColorB = (byte)Math.Clamp(rgb.Z, 0f, 255f);
+                            break;
+                        }
                     case "laser": c.Laser = Math.Clamp((int)Float(v, 1), 0, 1); break;
                     case "laser_scale": c.LaserScale = Math.Clamp(Float(v, 1f), 0.1f, 5f); break;
                     case "laser_sound": c.LaserSound = Bool(v); break;
@@ -347,6 +404,10 @@ internal static class SniperConfig
                     case "ak_back_rot": c.AkBackRot = Rot(v, c.AkBackRot); break;
                     case "ak_hand_offset": c.AkHandOffset = Vec(v, c.AkHandOffset); break;
                     case "ak_hand_rot": c.AkHandRot = Rot(v, c.AkHandRot); break;
+                    case "cu_back_offset": c.CuBackOffset = Vec(v, c.CuBackOffset); break;
+                    case "cu_back_rot": c.CuBackRot = Rot(v, c.CuBackRot); break;
+                    case "cu_hand_offset": c.CuHandOffset = Vec(v, c.CuHandOffset); break;
+                    case "cu_hand_rot": c.CuHandRot = Rot(v, c.CuHandRot); break;
                     case "muzzle_scale": c.MuzzleScale = Math.Max(0f, Float(v, 2f)); break;
                     case "trail": c.Trail = Math.Clamp((int)Float(v, 5), 0, SniperFire.TrailTypes.Length - 1); break;
                     case "trail_scale": c.TrailScale = Math.Max(0.1f, Float(v, 1.5f)); break;
@@ -382,8 +443,18 @@ internal static class SniperConfig
                 "switch_hold=" + c.SwitchHold.ToString(Util.Inv),
                 "",
                 "[sniper]",
-                "; arkham = the Arkham Knight's (Red Hood's) own sniper rifle from his boss fight, thug = the militia sniper rifle",
+                "; custom = the M170 rifle from BmGame\\CookedPCConsole\\BatmanArsenalRfl_SF.upk, arkham = the Arkham Knight's (Red Hood's) own sniper rifle from his boss fight",
+                "; (when the M170 file is missing the Arkham Knight's rifle is used; the militia rifle is only a last fallback if neither loads)",
+                "; M170 model: \"M170 Sniper Rifle (Flawless Vendetta)\" by Bl4ckGh0st (sketchfab.com/Bl4ckGh0st), CC BY 4.0 (creativecommons.org/licenses/by/4.0), converted for Arkham Knight: parts merged, textures combined into one sheet, resized",
                 "rifle_model=" + c.RifleModel,
+                "; size of the custom rifle (1 = as built), in hand and on the back",
+                "custom_scale=" + c.CustomScale.ToString(Util.Inv),
+                "; 1 = paint the custom rifle's dark body in rifle_rgb (its orange camo stays), 0 = its own colours",
+                "rifle_color=" + (c.RifleColor ? 1 : 0),
+                "rifle_rgb=" + c.ColorR + "," + c.ColorG + "," + c.ColorB,
+                "; the custom rifle's gold camo and gold trim: gold = as made, colored = the camo takes rifle_rgb (with rifle_color=1 the whole rifle is that colour),",
+                "; off = no camo (the camo areas take the body colour: black, or rifle_rgb with rifle_color=1)",
+                "rifle_camo=" + c.RifleCamo,
                 "; 1 = red laser sight while the rifle is aimed (the militia snipers' own laser), 0 = off. laser_key toggles it in game.",
                 "laser=" + c.Laser,
                 "; key that toggles the laser on/off in game (F5 is the guns' always-in-hand toggle)",
@@ -431,6 +502,11 @@ internal static class SniperConfig
                 "ak_back_rot=" + Util.R(c.AkBackRot),
                 "ak_hand_offset=" + Util.V(c.AkHandOffset),
                 "ak_hand_rot=" + Util.R(c.AkHandRot),
+                "; and for the custom rifle (rifle_model=custom)",
+                "cu_back_offset=" + Util.V(c.CuBackOffset),
+                "cu_back_rot=" + Util.R(c.CuBackRot),
+                "cu_hand_offset=" + Util.V(c.CuHandOffset),
+                "cu_hand_rot=" + Util.R(c.CuHandRot),
                 "",
                 "[effects]",
                 "muzzle_scale=" + c.MuzzleScale.ToString(Util.Inv),

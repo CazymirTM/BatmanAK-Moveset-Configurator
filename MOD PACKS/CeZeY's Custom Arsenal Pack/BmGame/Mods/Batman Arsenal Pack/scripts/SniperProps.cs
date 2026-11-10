@@ -21,7 +21,154 @@ internal static class SniperProps
     private const string ArkhamMeshPath = "Red_Hood_Weaponry.Mesh.Red_Hood_Weaponry_SNIPER";
     private static bool arkhamTried;
 
-    public static SkeletalMesh? RifleSkel => SniperConfig.C.ArkhamRifle && ArkhamRifle != null && ArkhamRifle.IsValid ? ArkhamRifle : SniperMesh;
+    public static SkeletalMesh? CustomRifle;
+
+    public const string CustomPackage = "BatmanArsenalRfl_SF";
+    public const string CustomMeshName = "BMAR_Rifle01_Skin";
+    private const string CustomMeshPath = "BMAR_Rifle01_Mesh.Mesh." + CustomMeshName;
+    public const string CustomTexturePrefix = "BMAR_Rifle01.Maps.BMAR_Rifle01_";
+    public const string CustomPaintMask = "GCPD_Cop.Maps.BMAR_Rifle01_PM_R";
+    public const string CustomCamoMask = "BMAR_Rifle01.Maps.BMAR_Rifle01_Camo_R";
+    public const string CustomAllMask = "GCPD_Cop.Maps.BMAR_Rifle01_AllM_R";
+    public const string CustomPaintDiffuse = "Oracle.Maps.BMAR_Rfl01_PD";
+    private static readonly Vector3 CustomMuzzleLocal = new Vector3(81.4f, 0f, 12.2f);
+    private static bool customTried;
+
+    public static SkeletalMesh? RifleSkel
+    {
+        get
+        {
+            SniperConfig.Settings c = SniperConfig.C;
+
+            if (c.CustomRifle && CustomRifle != null && CustomRifle.IsValid)
+            {
+                return CustomRifle;
+            }
+
+            return ArkhamRifle != null && ArkhamRifle.IsValid ? ArkhamRifle : SniperMesh;
+        }
+    }
+
+    public static bool IsCustom(SkeletalMesh? sm) => sm != null && sm.IsValid && sm.Name.ToString() == CustomMeshName;
+
+    public static bool CustomInstalled()
+    {
+        try
+        {
+            return System.IO.File.Exists(System.IO.Path.Combine(BmSDK.Framework.FileUtils.GetGamePath(), "CookedPCConsole", CustomPackage + ".upk"));
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    internal static void Frame(SkeletalMeshComponent m, out Vector3 pos, out Vector3 x, out Vector3 y, out Vector3 z)
+    {
+        pos = m.GetPosition();
+        Basis(m.GetRotation(), out x, out y, out z);
+    }
+
+    internal static Vector3 CustomMuzzle(SkeletalMeshComponent m)
+    {
+        Frame(m, out Vector3 pos, out Vector3 x, out Vector3 y, out Vector3 z);
+
+        return pos + (x * CustomMuzzleLocal.X + y * CustomMuzzleLocal.Y + z * CustomMuzzleLocal.Z) * m.Scale;
+    }
+
+    internal static Vector3 CustomBarrel(SkeletalMeshComponent m)
+    {
+        Frame(m, out Vector3 _, out Vector3 x, out Vector3 _, out Vector3 _);
+
+        return x;
+    }
+
+    private static void LoadCustom()
+    {
+        if (!SniperConfig.C.CustomRifle || (CustomRifle != null && CustomRifle.IsValid))
+        {
+            return;
+        }
+
+        try
+        {
+            CustomRifle = Game.FindObject<SkeletalMesh>(CustomMeshPath);
+
+            if (CustomRifle == null && !customTried)
+            {
+                customTried = true;
+
+                if (!CustomInstalled())
+                {
+                    ModLog.Info("Props: " + CustomPackage + ".upk is not in BmGame\\CookedPCConsole; using the Arkham Knight's rifle instead.");
+
+                    return;
+                }
+
+                Package? p = Game.LoadPackage(CustomPackage);
+
+                ModLog.Info("Props: LoadPackage(" + CustomPackage + ") -> " + (p != null && p.IsValid ? "loaded" : "null") + ".");
+                CustomRifle = Game.FindObject<SkeletalMesh>(CustomMeshPath);
+            }
+
+            if (CustomRifle == null)
+            {
+                return;
+            }
+
+            CustomRifle.AddToRoot();
+            FixBounds(CustomRifle);
+
+            foreach (string path in new[] { CustomTexturePrefix + "D", CustomTexturePrefix + "N", CustomTexturePrefix + "R", CustomPaintMask, CustomCamoMask, CustomAllMask, CustomPaintDiffuse })
+            {
+                Texture? texture = Game.FindObject<Texture>(path);
+
+                if (texture == null)
+                {
+                    ModLog.Info("Props: custom rifle texture " + path + " not found.");
+                }
+
+                texture?.AddToRoot();
+            }
+
+            ModLog.Info("Props: loaded the custom rifle " + CustomMeshName + " from " + CustomPackage + ".");
+        }
+        catch (Exception exception)
+        {
+            ModLog.Warn("Props: loading the custom rifle failed (falling back to the Arkham Knight's rifle): " + Util.Unwrap(exception));
+        }
+    }
+
+    private static void FixBounds(SkeletalMesh mesh)
+    {
+        var bounds = mesh.Bounds;
+
+        ModLog.Info("Props: custom rifle bounds were origin " + Util.V(bounds.Origin) + ", extent " + Util.V(bounds.BoxExtent) + ", radius " + bounds.SphereRadius.ToString("0.0", Util.Inv) + ".");
+        bounds.Origin = new Vector3(24.9f, 0f, 11.5f);
+        bounds.BoxExtent = new Vector3(60f, 8f, 18f);
+        bounds.SphereRadius = 64f;
+        mesh.Bounds = bounds;
+    }
+
+    private static void ApplyLook(SkeletalMeshComponent comp, SkeletalMesh? rifle)
+    {
+        bool custom = IsCustom(rifle);
+        float want = custom ? SniperConfig.C.CustomScale : 1f;
+
+        if (MathF.Abs(comp.Scale - want) > 0.001f)
+        {
+            comp.SetScale(want);
+        }
+
+        var wantBounds = custom ? RSkeletalMeshComponent_Export.ESkeletalMeshComponentBoundsType.SMCBT_ReferencePose : RSkeletalMeshComponent_Export.ESkeletalMeshComponentBoundsType.SMCBT_Automatic;
+
+        if (comp.BoundsType != wantBounds)
+        {
+            comp.BoundsType = wantBounds;
+        }
+
+        SniperPaint.Apply(comp, custom);
+    }
     public static AkEvent? FireEvent, ReloadEvent, OneShotEvent, DryFireEvent, DisDryEvent, LaserEvent;
     public static ParticleSystem? LaserPS;
     public static ParticleSystem? MuzzlePS, RicochetPS;
@@ -177,15 +324,18 @@ internal static class SniperProps
             }
         }
 
+        LoadCustom();
         LoadArkham();
 
-        ModLog.Info("Props: assets loaded (sniper mesh " + (SniperMesh != null ? "ok" : "MISSING") + ", Arkham Knight's rifle " + (ArkhamRifle != null ? "ok" : "not available") + ", laser " + (LaserPS != null ? "ok" : "MISSING") +
+        ModLog.Info("Props: assets loaded (sniper mesh " + (SniperMesh != null ? "ok" : "MISSING") + ", Arkham Knight's rifle " + (ArkhamRifle != null ? "ok" : "not loaded") + ", custom rifle " + (CustomRifle != null ? "ok" : "not loaded") + ", laser " + (LaserPS != null ? "ok" : "MISSING") +
             ", fire sound " + (FireEvent != null ? "ok" : "MISSING") + ", muzzle flash " + (MuzzlePS != null ? "ok" : "MISSING") + ").");
     }
 
     private static void LoadArkham()
     {
-        if (!SniperConfig.C.ArkhamRifle || (ArkhamRifle != null && ArkhamRifle.IsValid))
+        SniperConfig.Settings cfg = SniperConfig.C;
+
+        if ((cfg.CustomRifle && CustomRifle != null && CustomRifle.IsValid) || (ArkhamRifle != null && ArkhamRifle.IsValid))
         {
             return;
         }
@@ -259,7 +409,7 @@ internal static class SniperProps
         Reset();
     }
 
-    private static bool IsRifleMesh(SkeletalMesh? sm) => sm != null && sm.IsValid && (sm.Name.ToString() == "Sniper_Rifle_3P" || sm.Name.ToString() == "Red_Hood_Weaponry_SNIPER");
+    private static bool IsRifleMesh(SkeletalMesh? sm) => sm != null && sm.IsValid && (sm.Name.ToString() == "Sniper_Rifle_3P" || sm.Name.ToString() == "Red_Hood_Weaponry_SNIPER" || sm.Name.ToString() == CustomMeshName);
 
     private static bool SameMesh(SkeletalMesh? a, SkeletalMesh? b) => a != null && b != null && a.Ptr == b.Ptr;
 
@@ -282,6 +432,7 @@ internal static class SniperProps
         if (sniper || SniperConfig.C.BackShow)
         {
             EnsureAssets();
+            LoadCustom();
             LoadArkham();
         }
 
@@ -350,8 +501,9 @@ internal static class SniperProps
                 ModLog.Info("Props: Disruptor model swapped for the sniper rifle.");
             }
 
-            m.SetTranslation(c.ArkhamRifle && SameMesh(rifle, ArkhamRifle) ? c.AkHandOffset : c.HandOffset);
-            m.SetRotation(c.ArkhamRifle && SameMesh(rifle, ArkhamRifle) ? c.AkHandRot : c.HandRot);
+            m.SetTranslation(IsCustom(rifle) ? c.CuHandOffset : SameMesh(rifle, ArkhamRifle) ? c.AkHandOffset : c.HandOffset);
+            m.SetRotation(IsCustom(rifle) ? c.CuHandRot : SameMesh(rifle, ArkhamRifle) ? c.AkHandRot : c.HandRot);
+            ApplyLook(m, rifle);
 
             if (dis.Mesh2 != null && !dis.Mesh2.HiddenGame)
             {
@@ -374,6 +526,7 @@ internal static class SniperProps
             }
 
             m.SetSkeletalMesh(restore, false);
+            ApplyLook(m, restore);
 
             m.SetTranslation(Vector3.Zero);
             m.SetRotation(new Rotator(0, 0, 0));
@@ -436,6 +589,11 @@ internal static class SniperProps
         if (!show)
         {
             return;
+        }
+
+        if (back is SkeletalMeshComponent backSkel)
+        {
+            ApplyLook(backSkel, sk);
         }
 
         if (c.BackAuto)
@@ -563,9 +721,11 @@ internal static class SniperProps
 
     private static bool AkOnBack => ArkhamRifle != null && backMesh == ArkhamRifle.Ptr;
 
-    private static Vector3 BackOff(SniperConfig.Settings c) => AkOnBack ? c.AkBackOffset : c.BackOffset;
+    private static bool CuOnBack => CustomRifle != null && backMesh == CustomRifle.Ptr;
 
-    private static Rotator BackRotFor(SniperConfig.Settings c) => AkOnBack ? c.AkBackRot : c.BackRot;
+    private static Vector3 BackOff(SniperConfig.Settings c) => CuOnBack ? c.CuBackOffset : AkOnBack ? c.AkBackOffset : c.BackOffset;
+
+    private static Rotator BackRotFor(SniperConfig.Settings c) => CuOnBack ? c.CuBackRot : AkOnBack ? c.AkBackRot : c.BackRot;
 
     private static Vector3 BoneAxis(SkeletalMeshComponent m, string bone, GameObject.EAxis ax)
     {

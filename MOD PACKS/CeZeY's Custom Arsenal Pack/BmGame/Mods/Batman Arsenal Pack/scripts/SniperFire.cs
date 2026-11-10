@@ -299,6 +299,11 @@ internal static class SniperFire
     {
         SkeletalMeshComponent? m = g.Mesh;
 
+        if (m != null && SniperProps.IsCustom(m.SkeletalMesh))
+        {
+            return SniperProps.CustomMuzzle(m);
+        }
+
         if (m != null)
         {
             m.GetSocketWorldLocationAndRotation(new FName("DummyFlare"), out Vector3 fl, out Rotator _, 0);

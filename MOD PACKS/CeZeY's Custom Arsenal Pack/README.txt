@@ -21,16 +21,25 @@ MECH DEAGLE  (the guns' default model since 1.7.0)
 - The model lives in BmGame\CookedPCConsole\BatmanArsenalGun_SF.upk. Without that
   file the pack simply uses Red Hood's pistols.
 
-THE ARKHAM KNIGHT'S SNIPER RIFLE  (key 7, shares the Disruptor's slot)
-- The actual rifle the Arkham Knight uses in his boss fight, in Batman's hands
-  and slung across his back.
+THE SNIPER RIFLE  (key 7, shares the Disruptor's slot)
 - Hold 7 for one second to swap the slot between the Disruptor and the rifle.
+- Two models: the M170 (default since 1.8.0) or the Arkham Knight's own rifle from his
+  boss fight (RED HOOD). In Batman's hands and slung across his back.
 - Red laser sight while aiming (the same laser the militia snipers use).
   F6 turns the laser on/off.
 - 3-round magazine, R to reload, lethal shots with recoil, muzzle flash and tracer.
 - Sniper kills scare the thugs who see them: they flinch, then run away for a
   while before they pull themselves together.
 - Can break destructible objects and hit drones.
+
+M170 SNIPER RIFLE  (the sniper's default model since 1.8.0)
+- Pause menu > MODS > Batman Arsenal Pack > SNIPER (or BatmanSniper.ini):
+  RIFLE MODEL (M170 or RED HOOD), RIFLE SIZE, RIFLE PAINT and RIFLE COLOR (same colours
+  as the guns) and CAMO: GOLD (as made), COLORED (the camo takes the colour) or OFF.
+- The corner of the screen and the gadget wheel say M170 VENDETTA (MECH DEAGLES for
+  the Mech Deagle).
+- The model lives in BmGame\CookedPCConsole\BatmanArsenalRfl_SF.upk. Without that
+  file the pack simply uses the Arkham Knight's rifle.
 
 BATCLAW ZIP KICK  (Batclaw key, 2 by default)
 - Double-tap the Batclaw key and hold the second tap while a thug is targeted:
@@ -87,3 +96,11 @@ licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). Changes
 into an Arkham Knight package (built on a copy of the game's cop-arms package), turned, scaled and
 rigged to fit Batman's hands, textures re-encoded and a material mask made from its own maps. The
 in-game paint colours are applied by the pack at runtime.
+
+The M170 sniper model is "M170 Sniper Rifle (Flawless Vendetta)" by Bl4ckGh0st (https://sketchfab.com/Bl4ckGh0st),
+https://sketchfab.com/3d-models/m170-sniper-rifle-flawless-vendetta-e0060642258149b2a1faea5df3fb245a
+licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). Changes made: converted into an
+Arkham Knight package (built on a copy of the game's cop-arms package), its parts merged into one mesh,
+turned, scaled and rigged to fit Batman's hands, its textures combined into one sheet and re-encoded, a
+brightened copy of the colour map and paint masks made from its own maps for the paint and camo options.
+The in-game paint colours are applied by the pack at runtime.

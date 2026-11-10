@@ -103,7 +103,10 @@ internal static class SniperMode
     private static extern short GetAsyncKeyState(int virtualKey);
 
     private const string CornerLabelPath = "GrandLeftParent.LeftParent.GadgetName.NameText.text";
-    private const string SniperLabel = "SNIPER RIFLE";
+    private const string DefaultSniperLabel = "SNIPER RIFLE";
+    private const string CustomSniperLabel = "M170 VENDETTA";
+
+    private static string SniperLabel => SniperProps.IsCustom(SniperProps.RifleSkel) ? CustomSniperLabel : DefaultSniperLabel;
     private const string FirePrompt = "Fire Sniper Rifle";
 
     private static string? labelRoot;
@@ -111,8 +114,56 @@ internal static class SniperMode
     private static bool labelChanged = true;
     private static string? disruptorLabel;
 
+    private const string WheelTitlePath = "GrandRightParent.RightParent.WheelMovie.SelectedGadgetName.Child.NameText.text";
+    private static string disruptorClassName = "RDisruptorSniperBm";
+    private static string? disruptorWheelTitle;
+
+    public static void UpdateWheelTitle()
+    {
+        if (Game.GetPlayerController(0) is not RPlayerController controller || !controller.IsValid ||
+            controller.RadialGadgetSelect is not RGFxMovieRadialGadgetSelect movie || !movie.IsValid || !movie.bWheelOpen || !FindLabelRoot(movie))
+        {
+            return;
+        }
+
+        disruptorWheelTitle ??= GameObject.Localize(new FString("GadgetSelect"), new FString(disruptorClassName), new FString("GFxUI")).ToString() ?? "";
+
+        if (disruptorWheelTitle.Length == 0)
+        {
+            return;
+        }
+
+        string path = labelRoot + WheelTitlePath;
+        string title = movie.GetVariableString(new FString(path)).ToString() ?? "";
+        bool ours = title == DefaultSniperLabel || title == CustomSniperLabel;
+        string? wanted = null;
+
+        if (BatmanArsenalPack.Arsenal.Sniper && Sniper.Selected)
+        {
+            if (ours || title == disruptorWheelTitle)
+            {
+                wanted = SniperLabel;
+            }
+        }
+        else if (ours)
+        {
+            wanted = disruptorWheelTitle;
+        }
+
+        if (wanted != null && wanted != title)
+        {
+            movie.SetVariableString(new FString(path), new FString(wanted));
+        }
+    }
+
     public static void UpdateLabel(RPlayerController controller, bool sniperHeld, string disruptorClass)
     {
+        if (disruptorClass.Length > 0 && disruptorClass != disruptorClassName)
+        {
+            disruptorClassName = disruptorClass;
+            disruptorWheelTitle = null;
+        }
+
         if (!sniperHeld && !labelChanged)
         {
             return;
@@ -139,7 +190,7 @@ internal static class SniperMode
             }
             else
             {
-                if (text == SniperLabel)
+                if (text == DefaultSniperLabel || text == CustomSniperLabel)
                 {
                     disruptorLabel ??= GameObject.Localize(new FString("GadgetSelect"), new FString(disruptorClass), new FString("GFxUI")).ToString() ?? "";
                     movie.SetVariableString(new FString(path), new FString(disruptorLabel));
@@ -336,7 +387,7 @@ internal static class SniperMode
     {
         if (Sniper.Selected)
         {
-            ShowToast(SniperConfig.C.ArkhamRifle ? "ARKHAM KNIGHT'S SNIPER RIFLE" : "SNIPER RIFLE", SniperAmmo.MagSize + "-ROUND MAGAZINE  |  R TO RELOAD  |  " + SniperConfig.C.LaserKey.ToString().ToUpperInvariant() + " LASER  |  " + SwitchHint + " FOR THE DISRUPTOR", OrangeAccent);
+            ShowToast(SniperProps.IsCustom(SniperProps.RifleSkel) ? "M170 SNIPER RIFLE" : SniperConfig.C.ArkhamRifle ? "ARKHAM KNIGHT'S SNIPER RIFLE" : "SNIPER RIFLE", SniperAmmo.MagSize + "-ROUND MAGAZINE  |  R TO RELOAD  |  " + SniperConfig.C.LaserKey.ToString().ToUpperInvariant() + " LASER  |  " + SwitchHint + " FOR THE DISRUPTOR", OrangeAccent);
         }
         else
         {
@@ -384,6 +435,7 @@ internal static class SniperMode
         {
             if (Installed)
             {
+                UpdateWheelTitle();
                 SniperPad.Frame();
                 SniperPad.DrawWheelHint(canvas);
             }

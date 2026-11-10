@@ -25,6 +25,8 @@ internal static class GunsModel
 
     public static bool Wanted => GunsConfig.C.CustomModel;
 
+    public static bool Active => Wanted && custom != null && custom.IsValid;
+
     public static bool PackageInstalled()
     {
         try
@@ -101,6 +103,11 @@ internal static class GunsModel
                 continue;
             }
 
+            if (prop.BoundsType != RSkeletalMeshComponent_Export.ESkeletalMeshComponentBoundsType.SMCBT_ReferencePose)
+            {
+                prop.BoundsType = RSkeletalMeshComponent_Export.ESkeletalMeshComponentBoundsType.SMCBT_ReferencePose;
+            }
+
             float wanted = GunsConfig.C.CustomScale;
 
             if (MathF.Abs(prop.Scale - wanted) > 0.001f)
@@ -154,6 +161,13 @@ internal static class GunsModel
             }
 
             mesh.AddToRoot();
+
+            var bounds = mesh.Bounds;
+
+            bounds.Origin = new System.Numerics.Vector3(5.2f, 0f, 0.9f);
+            bounds.BoxExtent = new System.Numerics.Vector3(22f, 6f, 14f);
+            bounds.SphereRadius = 27f;
+            mesh.Bounds = bounds;
 
             foreach (string suffix in new[] { "D", "N", "R" })
             {

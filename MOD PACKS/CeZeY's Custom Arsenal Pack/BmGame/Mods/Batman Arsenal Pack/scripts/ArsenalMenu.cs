@@ -27,6 +27,10 @@ public static class Arsenal
 
     private static readonly string[] GunModels = { "redhood=RED HOOD", "custom=MECH DEAGLE" };
 
+    private static readonly string[] RifleModels = { "custom=M170", "arkham=RED HOOD" };
+
+    private static readonly string[] RifleCamos = { "gold=GOLD", "colored=COLORED", "off=OFF" };
+
     private static readonly (string Key, string Label, byte R, byte G, byte B)[] Paints =
     {
         ("gold", "GOLD", 255, 180, 30),
@@ -48,6 +52,7 @@ public static class Arsenal
         public Func<string, string> IniToMenu = raw => raw;
         public Func<string, string> MenuNorm = value => value;
         public Action<string> MenuToIni = _ => { };
+        public Func<bool> Ready = () => BatmanRedHoodGuns.GunsConfig.Loaded;
         public string? SeenIni;
         public string? SeenMenu;
     }
@@ -79,6 +84,17 @@ public static class Arsenal
                 "Colour used when GUN PAINT is ON. CUSTOM = the gun_rgb value you typed in BatmanGuns.ini (picking it keeps that value).")
             .Slider("GunSize", "GUN SIZE", 50, 200, 5, 130, "{0}%",
                 "Size of the Mech Deagle, in hand and in the holsters. 100% = the size it was converted at. Red Hood's own pistols keep their size.")
+            .Page("Sniper")
+            .Choice("RifleModel", "RIFLE MODEL", "custom", RifleModels,
+                "Which sniper rifle Batman uses, in his hands and on his back. M170 = the M170 Sniper Rifle (Flawless Vendetta) model by Bl4ckGh0st (Sketchfab, CC BY 4.0), converted for Arkham Knight. RED HOOD = the Arkham Knight's (Red Hood's) own rifle from his boss fight.")
+            .Slider("RifleSize", "RIFLE SIZE", 50, 200, 5, 100, "{0}%",
+                "Size of the M170 rifle, in hand and on the back. 100% = the size it was converted at. The other rifles keep their size.")
+            .Toggle("RiflePaint", "RIFLE PAINT", false,
+                "Paints the M170's black body in RIFLE COLOR (in hand and on the back). OFF = its own colours. The other rifles are not painted.")
+            .Choice("RifleColor", "RIFLE COLOR", "red", PaintOptions(),
+                "Colour used by RIFLE PAINT and by a COLORED camo. CUSTOM = the rifle_rgb value you typed in BatmanSniper.ini (picking it keeps that value).")
+            .Choice("RifleCamo", "CAMO", "gold", RifleCamos,
+                "The M170's gold camo and gold trim. GOLD = as made. COLORED = the camo takes RIFLE COLOR (with RIFLE PAINT ON the whole rifle is that colour). OFF = no camo, the camo areas take the body colour (black, or RIFLE COLOR with RIFLE PAINT ON).")
             .Register();
 
         rows = BuildRows();
@@ -168,12 +184,75 @@ public static class Arsenal
                     : "100",
                 MenuToIni = v => BatmanRedHoodGuns.GunsConfig.SetCustomScale(int.Parse(v, System.Globalization.CultureInfo.InvariantCulture) / 100f),
             },
+            new SyncRow
+            {
+                Key = "RifleModel",
+                Ready = () => BatmanDeathstrokeSniper.SniperConfig.Loaded,
+                IniRaw = () => BatmanDeathstrokeSniper.SniperConfig.C.RifleModel,
+                MenuNorm = v => v == "custom" ? "custom" : "arkham",
+                MenuToIni = v => BatmanDeathstrokeSniper.SniperConfig.SetRifleModel(v),
+            },
+            new SyncRow
+            {
+                Key = "RiflePaint",
+                Ready = () => BatmanDeathstrokeSniper.SniperConfig.Loaded,
+                IniRaw = () => BatmanDeathstrokeSniper.SniperConfig.C.RifleColor ? "on" : "off",
+                MenuNorm = v => v is "on" or "true" or "1" or "yes" ? "on" : "off",
+                MenuToIni = v => BatmanDeathstrokeSniper.SniperConfig.SetRifleColor(v == "on"),
+            },
+            new SyncRow
+            {
+                Key = "RifleColor",
+                Ready = () => BatmanDeathstrokeSniper.SniperConfig.Loaded,
+                IniRaw = () => BatmanDeathstrokeSniper.SniperConfig.C.ColorR + "," + BatmanDeathstrokeSniper.SniperConfig.C.ColorG + "," + BatmanDeathstrokeSniper.SniperConfig.C.ColorB,
+                IniToMenu = raw =>
+                {
+                    foreach (var paint in Paints)
+                    {
+                        if (raw == paint.R + "," + paint.G + "," + paint.B)
+                        {
+                            return paint.Key;
+                        }
+                    }
+
+                    return "custom";
+                },
+                MenuNorm = v => Array.Exists(Paints, p => p.Key == v) ? v : "custom",
+                MenuToIni = v =>
+                {
+                    foreach (var paint in Paints)
+                    {
+                        if (paint.Key == v)
+                        {
+                            BatmanDeathstrokeSniper.SniperConfig.SetRifleRgb(paint.R, paint.G, paint.B);
+                        }
+                    }
+                },
+            },
+            new SyncRow
+            {
+                Key = "RifleCamo",
+                Ready = () => BatmanDeathstrokeSniper.SniperConfig.Loaded,
+                IniRaw = () => BatmanDeathstrokeSniper.SniperConfig.C.RifleCamo,
+                MenuNorm = v => BatmanDeathstrokeSniper.SniperConfig.NormCamo(v),
+                MenuToIni = v => BatmanDeathstrokeSniper.SniperConfig.SetRifleCamo(v),
+            },
+            new SyncRow
+            {
+                Key = "RifleSize",
+                Ready = () => BatmanDeathstrokeSniper.SniperConfig.Loaded,
+                IniRaw = () => ((int)MathF.Round(BatmanDeathstrokeSniper.SniperConfig.C.CustomScale * 100f)).ToString(System.Globalization.CultureInfo.InvariantCulture),
+                MenuNorm = v => float.TryParse(v, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float f)
+                    ? ((int)MathF.Round(f)).ToString(System.Globalization.CultureInfo.InvariantCulture)
+                    : "100",
+                MenuToIni = v => BatmanDeathstrokeSniper.SniperConfig.SetCustomScale(int.Parse(v, System.Globalization.CultureInfo.InvariantCulture) / 100f),
+            },
         };
     }
 
     private static void SyncRows()
     {
-        if (menu == null || syncing || !BatmanRedHoodGuns.GunsConfig.Loaded)
+        if (menu == null || syncing)
         {
             return;
         }
@@ -184,7 +263,10 @@ public static class Arsenal
         {
             foreach (SyncRow row in rows)
             {
-                SyncOne(row);
+                if (row.Ready())
+                {
+                    SyncOne(row);
+                }
             }
         }
         catch (Exception exception)

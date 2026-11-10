@@ -15,7 +15,7 @@ internal static class GunIcons
     private const string ClipName = "RedHoodGunsIcon";
     private const string CurrentGadgetPath = "GrandLeftParent.LeftParent.CurrentGadget.Instance";
     private const string CornerLabelPath = "GrandLeftParent.LeftParent.GadgetName.NameText.text";
-    private const string GunsLabel = "DUAL HANDGUNS";
+    private static string GunsLabel => GunsModel.Active ? "MECH DEAGLES" : "DUAL HANDGUNS";
 
     private static string? root;
     private static IntPtr rootMovie = IntPtr.Zero;
@@ -82,6 +82,47 @@ internal static class GunIcons
         }
 
         clips.Clear();
+    }
+
+    private const string WheelTitlePath = "GrandRightParent.RightParent.WheelMovie.SelectedGadgetName.Child.NameText.text";
+    private const string CustomLabel = "MECH DEAGLES";
+    private static string? nativeWheelTitle;
+
+    public static void UpdateWheelTitle()
+    {
+        if (Game.GetPlayerController(0) is not RPlayerController controller || !controller.IsValid ||
+            controller.RadialGadgetSelect is not RGFxMovieRadialGadgetSelect movie || !movie.IsValid || !movie.bWheelOpen || !FindRoot(movie))
+        {
+            return;
+        }
+
+        nativeWheelTitle ??= GameObject.Localize(new FString("GadgetSelect"), new FString(Guns.ClassName), new FString("GFxUI")).ToString() ?? "";
+
+        if (nativeWheelTitle.Length == 0)
+        {
+            return;
+        }
+
+        string path = root + WheelTitlePath;
+        string title = movie.GetVariableString(new FString(path)).ToString() ?? "";
+        string? wanted = null;
+
+        if (GunsModel.Active)
+        {
+            if (title == nativeWheelTitle)
+            {
+                wanted = CustomLabel;
+            }
+        }
+        else if (title == CustomLabel)
+        {
+            wanted = nativeWheelTitle;
+        }
+
+        if (wanted != null && wanted != title)
+        {
+            movie.SetVariableString(new FString(path), new FString(wanted));
+        }
     }
 
     public static void Tick(RPlayerController controller, int slot)
