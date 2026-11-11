@@ -105,7 +105,7 @@ public static class Arsenal
                 "The M170's gold camo and gold trim. GOLD = as made. COLORED = the camo takes RIFLE COLOR (with RIFLE PAINT ON the whole rifle is that colour). OFF = no camo, the camo areas take the body colour (black, or RIFLE COLOR with RIFLE PAINT ON).")
             .Page("Rifle")
             .Choice("ArModel", "RIFLE MODEL", "m4", ArModels,
-                "Which assault rifle Batman uses (hold 1), in his hands and on his back. M4 CARBINE = the M4 Carbine model by Umang Rank (Sketchfab), converted for Arkham Knight. MILITIA = the militia's own rifle. The M4 needs BatmanArsenalM4C_SF.upk in BmGame\\CookedPCConsole.")
+                "Which assault rifle Batman uses (hold 1), in his hands and on his back. M4 CARBINE = the M4 Carbine Rifle model by UmangRank (Sketchfab, Free Standard licence), converted for Arkham Knight. MILITIA = the militia's own rifle. The M4 needs BatmanArsenalM4C_SF.upk in BmGame\\CookedPCConsole.")
             .Slider("ArSize", "RIFLE SIZE", 50, 200, 5, 100, "{0}%",
                 "Size of the M4 Carbine, in hand and on the back. 100% = the size it was converted at. The militia rifle keeps its size.")
             .Toggle("ArPaint", "RIFLE PAINT", false,

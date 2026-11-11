@@ -558,7 +558,7 @@ internal static class RifleConfig
                 "",
                 "[model]",
                 "; m4 = the M4 Carbine from BmGame\\CookedPCConsole\\BatmanArsenalM4C_SF.upk (when that file is missing the militia rifle is used), thug = the militia's own assault rifle",
-                "; M4 model: \"M4 Carbine\" by Umang Rank (Sketchfab). The creator must be credited; commercial use allowed; all rights reserved by Umang Rank.",
+                "; M4 model: \"M4 Carbine Rifle\" by UmangRank (sketchfab.com/UmangRank), Sketchfab Free Standard licence (sketchfab.com/licenses): sketchfab.com/3d-models/m4-carbine-rifle-3d028a9e936e4f58a5f10e2339ed7f88",
                 "; Converted for Arkham Knight: parts merged, hidden rounds removed, textures resized, camo and paint masks added.",
                 "rifle_model=" + c.RifleModel,
                 "; size of the M4 (in hand and on the back), 1 = as converted",

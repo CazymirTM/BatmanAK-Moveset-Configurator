@@ -128,10 +128,12 @@ turned, scaled and rigged to fit Batman's hands, its textures combined into one 
 brightened copy of the colour map and paint masks made from its own maps for the paint and camo options.
 The in-game paint colours are applied by the pack at runtime.
 
-The M4 Carbine model is "M4 Carbine" by Umang Rank (Sketchfab). Per its author's notes the creator must
-be credited when it is used in any creation, it can be used commercially, all rights reserved by Umang Rank.
-Changes made: converted into an Arkham Knight package (built on a copy of the game's cop-arms package),
-its parts merged into one mesh, the hidden rounds inside the magazine removed, turned, scaled and rigged to
-fit Batman's hands, its textures resized and re-encoded, and camo and paint masks made for the paint and
-camo options. The wheel hologram is a render of the converted model. The in-game paint colours are applied
-by the pack at runtime.
+The M4 Carbine model is "M4 Carbine Rifle" by UmangRank (https://sketchfab.com/UmangRank),
+https://sketchfab.com/3d-models/m4-carbine-rifle-3d028a9e936e4f58a5f10e2339ed7f88
+under the Sketchfab Free Standard licence (https://sketchfab.com/licenses). Changes made: converted into an
+Arkham Knight package (built on a copy of the game's cop-arms package), its parts merged into one mesh, the
+hidden rounds inside the magazine removed, turned, scaled and rigged to fit Batman's hands, its textures
+resized and re-encoded, and camo and paint masks made for the paint and camo options. The wheel hologram is
+a render of the converted model. The in-game paint colours are applied by the pack at runtime.
+
+The assault rifle's gadget icon was drawn for the pack by a friend of CeZeY.
