@@ -11,7 +11,7 @@ public static class Arsenal
 {
     private static ModMenu? menu;
 
-    private static bool pack = true, guns = true, sniper = true, zipKick = true, staff = true;
+    private static bool pack = true, guns = true, sniper = true, zipKick = true, staff = true, rifle = true;
 
     public static bool Pack => pack;
 
@@ -23,6 +23,8 @@ public static class Arsenal
 
     public static bool Staff => pack && staff;
 
+    public static bool Rifle => pack && rifle;
+
     private static readonly string[] YesNo = { "yes=YES", "no=NO" };
 
     private static readonly string[] GunModels = { "redhood=RED HOOD", "custom=MECH DEAGLE" };
@@ -30,6 +32,10 @@ public static class Arsenal
     private static readonly string[] RifleModels = { "custom=M170", "arkham=RED HOOD" };
 
     private static readonly string[] RifleCamos = { "gold=GOLD", "colored=COLORED", "off=OFF" };
+
+    private static readonly string[] ArModels = { "m4=M4 CARBINE", "thug=MILITIA" };
+
+    private static readonly string[] ArCamos = { "off=OFF", "colored=COLORED", "gold=GOLD" };
 
     private static readonly (string Key, string Label, byte R, byte G, byte B)[] Paints =
     {
@@ -66,7 +72,7 @@ public static class Arsenal
             .Title("ARSENAL", "PACK")
             .Page("Gadgets")
             .Choice("PackActive", "PACK ACTIVE", "yes", YesNo,
-                "Turns the whole Arsenal Pack on or off: Red Hood's guns, the sniper rifle, Robin's staff, the Batclaw Zip Kick and Dead Zone Aim. NO = none of these. The Console.txt moveset stays applied.")
+                "Turns the whole Arsenal Pack on or off: Red Hood's guns, the sniper rifle, the assault rifle, Robin's staff, the Batclaw Zip Kick and Dead Zone Aim. NO = none of these. The Console.txt moveset stays applied.")
             .Choice("GunsActive", "GUNS ACTIVE", "yes", YesNo,
                 "Red Hood's dual handguns (hold 4, they share the Remote Electrical Charge slot). NO gives the slot back to the REC gun.")
             .Choice("SniperActive", "SNIPER ACTIVE", "yes", YesNo,
@@ -75,6 +81,8 @@ public static class Arsenal
                 "Batclaw Zip Kick: double tap the Batclaw key and hold the second tap to fly at a thug and kick him. NO = the Batclaw works as normal.")
             .Choice("StaffActive", "STAFF ACTIVE", "yes", YesNo,
                 "Robin's staff (hold 5, it shares the Freeze Blast slot). While it is out, Batman fights with Robin's strikes, counters and takedowns. NO leaves the Freeze Blast as normal.")
+            .Choice("RifleActive", "RIFLE ACTIVE", "yes", YesNo,
+                "The assault rifle, an M4 Carbine or the militia's rifle (hold 1, it shares the Batarang slot): 37-round magazine, full auto, recoil and Dead Zone Aim. NO leaves the Batarang as normal.")
             .Page("Guns")
             .Choice("GunModel", "GUN MODEL", "custom", GunModels,
                 "Which pistols Batman uses, in his hands and in the thigh holsters. RED HOOD = Red Hood's own pistols. MECH DEAGLE = the Mech Deagle model by Long Nguyen (Sketchfab, CC BY 4.0), converted for Arkham Knight.")
@@ -95,6 +103,17 @@ public static class Arsenal
                 "Colour used by RIFLE PAINT and by a COLORED camo. CUSTOM = the rifle_rgb value you typed in BatmanSniper.ini (picking it keeps that value).")
             .Choice("RifleCamo", "CAMO", "gold", RifleCamos,
                 "The M170's gold camo and gold trim. GOLD = as made. COLORED = the camo takes RIFLE COLOR (with RIFLE PAINT ON the whole rifle is that colour). OFF = no camo, the camo areas take the body colour (black, or RIFLE COLOR with RIFLE PAINT ON).")
+            .Page("Rifle")
+            .Choice("ArModel", "RIFLE MODEL", "m4", ArModels,
+                "Which assault rifle Batman uses (hold 1), in his hands and on his back. M4 CARBINE = the M4 Carbine model by Umang Rank (Sketchfab), converted for Arkham Knight. MILITIA = the militia's own rifle. The M4 needs BatmanArsenalM4C_SF.upk in BmGame\\CookedPCConsole.")
+            .Slider("ArSize", "RIFLE SIZE", 50, 200, 5, 100, "{0}%",
+                "Size of the M4 Carbine, in hand and on the back. 100% = the size it was converted at. The militia rifle keeps its size.")
+            .Toggle("ArPaint", "RIFLE PAINT", false,
+                "Paints the M4 in RIFLE COLOR (in hand and on the back). OFF = its own colours. The militia rifle is not painted.")
+            .Choice("ArColor", "RIFLE COLOR", "red", PaintOptions(),
+                "Colour used by RIFLE PAINT and by a COLORED camo. CUSTOM = the rifle_rgb value you typed in BatmanRifle.ini (picking it keeps that value).")
+            .Choice("ArCamo", "CAMO", "off", ArCamos,
+                "Camo blotches on the M4's receiver, handguard and stock. OFF = no camo. COLORED = the camo takes RIFLE COLOR (with RIFLE PAINT ON the whole rifle is RIFLE COLOR, the camo a warmer shade). GOLD = gold camo (with RIFLE PAINT ON the rest of the rifle is RIFLE COLOR).")
             .Register();
 
         rows = BuildRows();
@@ -239,6 +258,69 @@ public static class Arsenal
             },
             new SyncRow
             {
+                Key = "ArModel",
+                Ready = () => BatmanAssaultRifle.RifleConfig.Loaded,
+                IniRaw = () => BatmanAssaultRifle.RifleConfig.C.RifleModel,
+                MenuNorm = v => BatmanAssaultRifle.RifleConfig.NormModel(v),
+                MenuToIni = v => BatmanAssaultRifle.RifleConfig.SetRifleModel(v),
+            },
+            new SyncRow
+            {
+                Key = "ArPaint",
+                Ready = () => BatmanAssaultRifle.RifleConfig.Loaded,
+                IniRaw = () => BatmanAssaultRifle.RifleConfig.C.RiflePaint ? "on" : "off",
+                MenuNorm = v => v is "on" or "true" or "1" or "yes" ? "on" : "off",
+                MenuToIni = v => BatmanAssaultRifle.RifleConfig.SetRiflePaint(v == "on"),
+            },
+            new SyncRow
+            {
+                Key = "ArColor",
+                Ready = () => BatmanAssaultRifle.RifleConfig.Loaded,
+                IniRaw = () => BatmanAssaultRifle.RifleConfig.C.ColorR + "," + BatmanAssaultRifle.RifleConfig.C.ColorG + "," + BatmanAssaultRifle.RifleConfig.C.ColorB,
+                IniToMenu = raw =>
+                {
+                    foreach (var paint in Paints)
+                    {
+                        if (raw == paint.R + "," + paint.G + "," + paint.B)
+                        {
+                            return paint.Key;
+                        }
+                    }
+
+                    return "custom";
+                },
+                MenuNorm = v => Array.Exists(Paints, p => p.Key == v) ? v : "custom",
+                MenuToIni = v =>
+                {
+                    foreach (var paint in Paints)
+                    {
+                        if (paint.Key == v)
+                        {
+                            BatmanAssaultRifle.RifleConfig.SetRifleRgb(paint.R, paint.G, paint.B);
+                        }
+                    }
+                },
+            },
+            new SyncRow
+            {
+                Key = "ArCamo",
+                Ready = () => BatmanAssaultRifle.RifleConfig.Loaded,
+                IniRaw = () => BatmanAssaultRifle.RifleConfig.C.RifleCamo,
+                MenuNorm = v => BatmanAssaultRifle.RifleConfig.NormCamo(v),
+                MenuToIni = v => BatmanAssaultRifle.RifleConfig.SetRifleCamo(v),
+            },
+            new SyncRow
+            {
+                Key = "ArSize",
+                Ready = () => BatmanAssaultRifle.RifleConfig.Loaded,
+                IniRaw = () => ((int)MathF.Round(BatmanAssaultRifle.RifleConfig.C.CustomScale * 100f)).ToString(System.Globalization.CultureInfo.InvariantCulture),
+                MenuNorm = v => float.TryParse(v, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float f)
+                    ? ((int)MathF.Round(f)).ToString(System.Globalization.CultureInfo.InvariantCulture)
+                    : "100",
+                MenuToIni = v => BatmanAssaultRifle.RifleConfig.SetCustomScale(int.Parse(v, System.Globalization.CultureInfo.InvariantCulture) / 100f),
+            },
+            new SyncRow
+            {
                 Key = "RifleSize",
                 Ready = () => BatmanDeathstrokeSniper.SniperConfig.Loaded,
                 IniRaw = () => ((int)MathF.Round(BatmanDeathstrokeSniper.SniperConfig.C.CustomScale * 100f)).ToString(System.Globalization.CultureInfo.InvariantCulture),
@@ -331,15 +413,15 @@ public static class Arsenal
             return;
         }
 
-        bool p = menu.Bool("PackActive"), g = menu.Bool("GunsActive"), s = menu.Bool("SniperActive"), z = menu.Bool("ZipKickActive"), st = menu.Bool("StaffActive");
+        bool p = menu.Bool("PackActive"), g = menu.Bool("GunsActive"), s = menu.Bool("SniperActive"), z = menu.Bool("ZipKickActive"), st = menu.Bool("StaffActive"), r = menu.Bool("RifleActive");
 
-        if (p != pack || g != guns || s != sniper || z != zipKick || st != staff || !logged)
+        if (p != pack || g != guns || s != sniper || z != zipKick || st != staff || r != rifle || !logged)
         {
             logged = true;
 
             try
             {
-                Debug.Log("[Arsenal] Pack " + (p ? "ACTIVE" : "OFF") + ", guns " + (p && g ? "ACTIVE" : "OFF") + ", sniper " + (p && s ? "ACTIVE" : "OFF") + ", zip kick " + (p && z ? "ACTIVE" : "OFF") + ", staff " + (p && st ? "ACTIVE" : "OFF") + ".");
+                Debug.Log("[Arsenal] Pack " + (p ? "ACTIVE" : "OFF") + ", guns " + (p && g ? "ACTIVE" : "OFF") + ", sniper " + (p && s ? "ACTIVE" : "OFF") + ", zip kick " + (p && z ? "ACTIVE" : "OFF") + ", staff " + (p && st ? "ACTIVE" : "OFF") + ", rifle " + (p && r ? "ACTIVE" : "OFF") + ".");
             }
             catch
             {
@@ -351,6 +433,7 @@ public static class Arsenal
         sniper = s;
         zipKick = z;
         staff = st;
+        rifle = r;
     }
 
     private static bool logged;

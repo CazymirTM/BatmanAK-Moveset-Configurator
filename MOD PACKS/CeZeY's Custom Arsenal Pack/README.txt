@@ -41,6 +41,29 @@ M170 SNIPER RIFLE  (the sniper's default model since 1.8.0)
 - The model lives in BmGame\CookedPCConsole\BatmanArsenalRfl_SF.upk. Without that
   file the pack simply uses the Arkham Knight's rifle.
 
+THE ASSAULT RIFLE  (key 1, shares the Batarang's slot, new in 1.9.0)
+- Hold 1 for one second to swap the slot between the Batarang and the rifle.
+  A banner confirms it and the choice is remembered.
+- Two models: the M4 Carbine (default) or the militia's own rifle. In Batman's
+  hands with the rifle thugs' aim pose, slung on his back beside the sniper rifle.
+- Full auto (750 rounds a minute) while the fire button is held, 37-round magazine,
+  R to reload with the rifle thugs' own reload, muzzle flash, tracers, recoil and
+  Dead Zone Aim, with the Disruptor's reticle and an ammo counter next to it.
+- Two body hits make a thug stagger, the third (or one headshot) kills him.
+- Double-tap 1 (or quickfire in combat) for a 5-round burst from the hip.
+- Pause menu > MODS > Batman Arsenal Pack > RIFLE (or BatmanRifle.ini): RIFLE MODEL
+  (M4 CARBINE or MILITIA), RIFLE SIZE, RIFLE PAINT, RIFLE COLOR and CAMO (OFF, COLORED or
+  GOLD). The M4 lives in BmGame\CookedPCConsole\BatmanArsenalM4C_SF.upk; without that
+  file the pack uses the militia rifle.
+- Own gadget icon in the corner of the screen and on the gadget wheel, plus its own
+  wheel page (hologram, description and controls), from
+  BmGame\CookedPCConsole\BatmanArsenalIco_SF.upk.
+
+GADGET WHEEL PAGES  (new in 1.9.8)
+- The guns, the sniper rifle and the assault rifle each have their own page in the
+  centre of the gadget wheel: a hologram of the model you use, a description and
+  the controls (keyboard or gamepad).
+
 BATCLAW ZIP KICK  (Batclaw key, 2 by default)
 - Double-tap the Batclaw key and hold the second tap while a thug is targeted:
   Batman fires the claw, flies at the thug and drop-kicks him.
@@ -104,3 +127,11 @@ Arkham Knight package (built on a copy of the game's cop-arms package), its part
 turned, scaled and rigged to fit Batman's hands, its textures combined into one sheet and re-encoded, a
 brightened copy of the colour map and paint masks made from its own maps for the paint and camo options.
 The in-game paint colours are applied by the pack at runtime.
+
+The M4 Carbine model is "M4 Carbine" by Umang Rank (Sketchfab). Per its author's notes the creator must
+be credited when it is used in any creation, it can be used commercially, all rights reserved by Umang Rank.
+Changes made: converted into an Arkham Knight package (built on a copy of the game's cop-arms package),
+its parts merged into one mesh, the hidden rounds inside the magazine removed, turned, scaled and rigged to
+fit Batman's hands, its textures resized and re-encoded, and camo and paint masks made for the paint and
+camo options. The wheel hologram is a render of the converted model. The in-game paint colours are applied
+by the pack at runtime.

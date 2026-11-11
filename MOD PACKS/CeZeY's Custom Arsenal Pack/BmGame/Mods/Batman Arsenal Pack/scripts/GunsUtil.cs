@@ -233,7 +233,7 @@ internal static class SniperLink
     {
         try
         {
-            return AppDomain.CurrentDomain.GetData(InHandKey) as string == "1" || AppDomain.CurrentDomain.GetData("BatmanStaff.InHand") as string == "1";
+            return AppDomain.CurrentDomain.GetData(InHandKey) as string == "1" || AppDomain.CurrentDomain.GetData("BatmanStaff.InHand") as string == "1" || AppDomain.CurrentDomain.GetData("BatmanRifle.InHand") as string == "1";
         }
         catch
         {
@@ -241,11 +241,15 @@ internal static class SniperLink
         }
     }
 
-    public static bool IsSniperVictim(GameObject? pawn)
+    public static bool IsRifleVictim(GameObject? pawn) => IsVictimIn("BatmanRifle.Victims", pawn);
+
+    public static bool IsSniperVictim(GameObject? pawn) => IsVictimIn(VictimsKey, pawn);
+
+    private static bool IsVictimIn(string key, GameObject? pawn)
     {
         try
         {
-            if (pawn == null || AppDomain.CurrentDomain.GetData(VictimsKey) is not string list || list.Length == 0)
+            if (pawn == null || AppDomain.CurrentDomain.GetData(key) is not string list || list.Length == 0)
             {
                 return false;
             }

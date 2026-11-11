@@ -94,6 +94,7 @@ internal static class GunsMode
 
         GunsConfig.SetGunsSelected(toGuns);
         GunsWheel.ApplyMode(controller, inventory, equip);
+        Util.TryCall("rec corner label", BatmanAssaultRifle.WheelPages.FixCornerNow);
         ModLog.Info("Mode: the " + Guns.ReplacedGadget + " slot now holds " + (toGuns ? "Red Hood's guns" : Guns.ReplacedGadget) + ".");
         ShowSlotToast();
     }

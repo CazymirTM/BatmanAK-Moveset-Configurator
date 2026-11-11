@@ -61,7 +61,7 @@ public partial class DZAim : Script
     static Cfg C = new();
     static readonly HashSet<string> States = new(), ExcludedStates = new();
     static bool AnyState = true;
-    static bool ExtraAllowed() { try { return AppDomain.CurrentDomain.GetData("DZAim.Allow") as string == "1"; } catch { return false; } }
+    static bool ExtraAllowed() { try { return AppDomain.CurrentDomain.GetData("DZAim.Allow") as string == "1" || AppDomain.CurrentDomain.GetData("DZAim.AllowRifle") as string == "1"; } catch { return false; } }
     static bool CamAllowed(string s) =>!ExcludedStates.Contains(s) && (AnyState || States.Contains(s));
 
     sealed class Zone
@@ -676,6 +676,7 @@ restore_at=0
         if (pc == null) return;
         var g = (pc.Pawn?.InvManager as RInventoryManager)?.CurrentGadget;
         var T = AimPoint(pc, g);
+        T = SmoothDepth(T);
 
         Vector3 vl = RVOn ? RVLoc : RealLoc; Rotator vr = RVOn ? RVRot : RealRot; float vfov = RVOn ? RVFov : RealFov;
         Axes(vr, out var xv, out var yv, out var zv);
@@ -704,6 +705,32 @@ restore_at=0
         }
     }
 
+    // Rifle only (DZAim.AllowRifle): the reticle is the aim trace's hit point seen from the
+    // orbited view, so its screen spot depends on the hit depth. When the trace flips between a
+    // thug and the background (or through gaps between his limbs) the reticle jumped 45-90 px
+    // for single frames. The hit distance is smoothed in 1/distance over 0.1 s, so a depth
+    // change glides instead of jumping; a steady aim still lands exactly on the hit point.
+    const float DepthTau = 0.1f;
+    static float InvDepth, InvDepthT = -10f;
+    static Vector3 AimOrg, AimDir;
+    static bool AimRay;
+
+    static Vector3 SmoothDepth(Vector3 T)
+    {
+        if (!AimRay) return T;
+        bool rifle;
+        try { rifle = AppDomain.CurrentDomain.GetData("DZAim.AllowRifle") as string == "1"; } catch { rifle = false; }
+        float now = Now;
+        float d = Vector3.Dot(T - AimOrg, AimDir);
+        if (!rifle || d < 1f) { InvDepthT = -10f; return T; }
+        float inv = 1f / d;
+        float dt = now - InvDepthT;
+        if (dt > 0.25f || dt < 0f) InvDepth = inv;
+        else InvDepth += (inv - InvDepth) * (1f - MathF.Exp(-dt / DepthTau));
+        InvDepthT = now;
+        return AimOrg + AimDir * (1f / Math.Max(InvDepth, 1e-6f));
+    }
+
     static Vector2 LastScreen, S1, S2;
     static bool HaveS1, HaveS2;
     static float Jerk; static int nJerk;
@@ -713,6 +740,7 @@ restore_at=0
         Vector3 org = FPEyeAim ? FPEye : RealLoc; Rotator rot = RealRot;
         if (C.AimSource == 1 && g != null) { rot = g.GetAutoTargetRotation(); org = g.GetAutoTargetOrigin(rot); }
         var dir = rot.ToDirection();
+        AimOrg = org; AimDir = dir; AimRay = true;
         float skip = PivotOk ? Math.Max(0f, Vector3.Dot(Pivot - org, dir)) : 0f;
         var start = org + dir * skip;
         var end = org + dir * C.TraceDist;

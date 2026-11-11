@@ -441,7 +441,7 @@ internal static class GunsWheel
 
             if (patched != null)
             {
-                self.SendGadgetsToFlashPrivate(new FString(acronym), maxSlots, new FString(patched));
+                self.SendGadgetsToFlashPrivate(new FString(acronym), maxSlots, new FString(HologramSafe(patched)));
                 GunIcons.Apply(self, SharedSlot);
 
                 return;
@@ -452,8 +452,25 @@ internal static class GunsWheel
             ModLog.Once("flash-failed", "Wheel: patching the Flash list failed: " + Util.Unwrap(exception));
         }
 
-        self.SendGadgetsToFlashPrivate(new FString(acronym), maxSlots, new FString(list));
+        self.SendGadgetsToFlashPrivate(new FString(acronym), maxSlots, new FString(HologramSafe(list)));
         GunIcons.Apply(self, SharedSlot);
+    }
+
+    // There is no wheel hologram package for Red Hood's guns (no Gad_MDualHandgunsRh_SF anywhere): the failed
+    // load leaves the wheel's hologram holder in its "Out" state, and every gadget highlighted after the guns in
+    // that opening showed an empty centre. Flash gets the REC gun's class for the guns' slot instead (its
+    // hologram loads fine and the pack's wheel page covers it); the pack's own slot bookkeeping (Remember)
+    // still sees the guns' class, the slot icon and labels are drawn by GunIcons / WheelPages.
+    private static string HologramSafe(string list)
+    {
+        if (!list.Contains(Guns.ClassName + "|", StringComparison.Ordinal) || list.Contains(Guns.ReplacedGadget + "|", StringComparison.Ordinal))
+        {
+            return list;
+        }
+
+        ModLog.Once("holo-safe", "Wheel: the guns' slot is sent to Flash as " + Guns.ReplacedGadget + " (the guns have no wheel hologram).");
+
+        return list.Replace(Guns.ClassName + "|", Guns.ReplacedGadget + "|", StringComparison.Ordinal);
     }
 
     private static string? Patch(string list)

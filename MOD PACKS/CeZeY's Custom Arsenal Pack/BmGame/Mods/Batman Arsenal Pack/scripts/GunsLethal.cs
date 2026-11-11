@@ -52,13 +52,13 @@ internal static class GunsLethal
         }
 
         killedList.RemoveAll(v => !v.IsValid);
-        ModLog.Info("Lethal: " + Util.ClassName(villain) + " killed by the " + (SniperLink.IsSniperVictim(villain) ? "sniper rifle" : "guns") + " (" + killedList.Count + " dead).");
+        ModLog.Info("Lethal: " + Util.ClassName(villain) + " killed by the " + (SniperLink.IsSniperVictim(villain) ? "sniper rifle" : SniperLink.IsRifleVictim(villain) ? "assault rifle" : "guns") + " (" + killedList.Count + " dead).");
     }
 
     [Redirect(typeof(RPawnVillain), nameof(RPawnVillain.TakeDamage))]
     private static void TakeDamageRedirect(RPawnVillain self, int damage, Controller instigatedBy, Vector3 hitLocation, Vector3 momentum, Class damageType, Actor.FTraceHitInfo hitInfo, Actor damageCauser)
     {
-        if (!(BatmanArsenalPack.Arsenal.Guns || BatmanArsenalPack.Arsenal.Sniper))
+        if (!(BatmanArsenalPack.Arsenal.Guns || BatmanArsenalPack.Arsenal.Sniper || BatmanArsenalPack.Arsenal.Rifle))
         {
             self.TakeDamage(damage, instigatedBy, hitLocation, momentum, damageType, hitInfo, damageCauser);
             return;
@@ -68,7 +68,7 @@ internal static class GunsLethal
 
         try
         {
-            lethal = IsGunDamage(damageType) && ByBatman(instigatedBy) && (Guns.Gun != null || SniperLink.IsSniperVictim(self));
+            lethal = IsGunDamage(damageType) && ByBatman(instigatedBy) && (Guns.Gun != null || SniperLink.IsSniperVictim(self) || SniperLink.IsRifleVictim(self));
 
             if (lethal)
             {
@@ -116,7 +116,7 @@ internal static class GunsLethal
     [Redirect(typeof(RPawnVillain), nameof(RPawnVillain.PlayRagdoll))]
     private static void PlayRagdollRedirect(RPawnVillain self, RPawnCombat.FDamageInfo info, RGameInfo.RagdollStunType stunType, bool kill)
     {
-        if (!(BatmanArsenalPack.Arsenal.Guns || BatmanArsenalPack.Arsenal.Sniper))
+        if (!(BatmanArsenalPack.Arsenal.Guns || BatmanArsenalPack.Arsenal.Sniper || BatmanArsenalPack.Arsenal.Rifle))
         {
             self.PlayRagdoll(info, stunType, kill);
             return;
@@ -126,7 +126,7 @@ internal static class GunsLethal
 
         try
         {
-            lethal = IsGunDamage(info.DamageType) && ByBatman(info.Attacker) && (Guns.Gun != null || SniperLink.IsSniperVictim(self));
+            lethal = IsGunDamage(info.DamageType) && ByBatman(info.Attacker) && (Guns.Gun != null || SniperLink.IsSniperVictim(self) || SniperLink.IsRifleVictim(self));
         }
         catch
         {
@@ -143,7 +143,7 @@ internal static class GunsLethal
     [Redirect(typeof(RPawnVillain), nameof(RPawnVillain.WakeFromDead))]
     private static void WakeFromDeadRedirect(RPawnVillain self, RPawnCharacter newGetUpMaster, RAnimUtil_PosePlayer.FTransitionId newGetUpMasterAnimID, AnimSet newGetUpAnimset, FName newGetUpAnimName, FName getUpMovementStance, bool doAnim, bool animImmediate)
     {
-        if (!(BatmanArsenalPack.Arsenal.Guns || BatmanArsenalPack.Arsenal.Sniper))
+        if (!(BatmanArsenalPack.Arsenal.Guns || BatmanArsenalPack.Arsenal.Sniper || BatmanArsenalPack.Arsenal.Rifle))
         {
             self.WakeFromDead(newGetUpMaster, newGetUpMasterAnimID, newGetUpAnimset, newGetUpAnimName, getUpMovementStance, doAnim, animImmediate);
             return;
@@ -162,7 +162,7 @@ internal static class GunsLethal
     [Redirect(typeof(RPawnVillain), nameof(RPawnVillain.CanBeRevivedByMedic))]
     private static bool CanBeRevivedByMedicRedirect(RPawnVillain self, RPawnVillain newMedic, RPawnCombat newTarget)
     {
-        if (!(BatmanArsenalPack.Arsenal.Guns || BatmanArsenalPack.Arsenal.Sniper))
+        if (!(BatmanArsenalPack.Arsenal.Guns || BatmanArsenalPack.Arsenal.Sniper || BatmanArsenalPack.Arsenal.Rifle))
         {
             return self.CanBeRevivedByMedic(newMedic, newTarget);
         }
@@ -195,7 +195,7 @@ internal static class GunsLethal
     [Redirect(typeof(RHudModuleDetectiveMode), nameof(RHudModuleDetectiveMode.SetNPCDetail))]
     private static void SetNPCDetailRedirect(RHudModuleDetectiveMode self, float locationX, float locationY, float locationDepth, int physicalState, int weapon, int extraInfo, bool armoured, FString optionalName)
     {
-        if (!(BatmanArsenalPack.Arsenal.Guns || BatmanArsenalPack.Arsenal.Sniper))
+        if (!(BatmanArsenalPack.Arsenal.Guns || BatmanArsenalPack.Arsenal.Sniper || BatmanArsenalPack.Arsenal.Rifle))
         {
             self.SetNPCDetail(locationX, locationY, locationDepth, physicalState, weapon, extraInfo, armoured, new FString(optionalName.ToString() ?? ""));
             return;
